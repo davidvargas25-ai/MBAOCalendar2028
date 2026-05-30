@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A-MBA Online 2028 · Calendario Interactivo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,900&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f6f1e7; --paper2:#efe7d6; --ink:#23202b; --ink-soft:#5c5667;
+  --line:#d8cdb6; --accent:#8a2f57; --accent2:#2f6d6a; --gold:#b5852a;
+  --shadow:0 1px 0 rgba(0,0,0,.04),0 8px 28px -16px rgba(40,30,20,.35);
+  --c-incae:#b5852a;
+  --c-lider:#8a2f57;
+  --c-creavalor:#2f8f7a;
+  --c-introconta:#3a5a9c;
+  --c-matefin:#7a3fa0;
+  --c-introanalit:#0f8a8a;
+  --c-pensa:#b4521c;
+  --c-cs:#5c7a23;
+  --c-evol:#2f9c4a;
+  --c-analit:#2f6db5;
+  --c-comunlid:#c43b8a;
+  --c-contafin:#9c7a1e;
+  --c-finanzas:#2f7d3f;
+  --c-gerencia:#b03a2f;
+  --c-datamodels:#6a4ad0;
+  --c-orgind:#1f6f8c;
+  --c-grupoest:#1f9cc4;
+  --c-act:#8a857c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:
+   radial-gradient(circle at 12% 8%, rgba(181,133,42,.07), transparent 40%),
+   radial-gradient(circle at 88% 92%, rgba(47,109,106,.07), transparent 42%),
+   var(--paper);
+  color:var(--ink);font-family:'Archivo',sans-serif;line-height:1.45;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1320px;margin:0 auto;padding:28px 22px 80px}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;border-bottom:2px solid var(--ink);padding-bottom:18px}
+.brand .kicker{font-size:.72rem;letter-spacing:.32em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.brand h1{font-family:'Fraunces',serif;font-weight:900;font-size:clamp(1.9rem,4vw,3rem);line-height:.98;margin:.15em 0 .1em}
+.brand .sub{color:var(--ink-soft);font-size:.92rem;max-width:48ch}
+.range-badge{font-family:'Fraunces',serif;font-style:italic;font-size:1.05rem;color:var(--ink-soft);text-align:right}
+.range-badge b{display:block;font-style:normal;font-weight:600;font-size:.8rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin-bottom:2px}
+.note{margin:16px 0 0;background:linear-gradient(180deg,#fffaf0,#f6efde);border:1px solid var(--line);border-left:4px solid var(--gold);padding:11px 15px;border-radius:8px;font-size:.84rem;color:#5a4e35}
+.note b{color:var(--ink)}
+.controls{margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px 18px;background:var(--paper2);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+.ctl label{display:block;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--ink-soft);margin-bottom:6px}
+select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fffdf8;color:var(--ink);font-size:.9rem;cursor:pointer;font-family:'Archivo',sans-serif}
+select:focus{outline:2px solid var(--accent2);outline-offset:1px}
+select:disabled{opacity:.5;cursor:not-allowed}
+.seg{display:inline-flex;background:#fffdf8;border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;padding:8px 14px;border-radius:7px;font-size:.85rem;font-weight:600;color:var(--ink-soft);cursor:pointer;transition:.15s;font-family:'Archivo',sans-serif}
+.seg button.active{background:var(--ink);color:var(--paper)}
+.toggle{display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;font-size:.9rem;font-weight:600;margin-top:24px}
+.toggle input{appearance:none;width:42px;height:23px;background:var(--line);border-radius:20px;position:relative;cursor:pointer;transition:.2s;flex:0 0 auto}
+.toggle input:checked{background:var(--accent2)}
+.toggle input::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:2.5px;left:2.5px;transition:.2s}
+.toggle input:checked::after{left:21px}
+.navbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:24px;flex-wrap:wrap}
+.navbar .title{font-size:.92rem;color:var(--ink-soft);font-weight:500}
+.navbar .title b{font-family:'Fraunces',serif;color:var(--ink);font-weight:600;font-style:italic}
+/* Section blocks (per month / per week) */
+.section{margin-top:26px}
+.section-head{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:14px;position:sticky;top:0;background:linear-gradient(180deg,var(--paper) 70%,transparent);z-index:5}
+.section-head .sh-title{font-family:'Fraunces',serif;font-weight:900;font-size:clamp(1.4rem,3vw,2rem);line-height:1;color:var(--ink);text-transform:capitalize}
+.section-head .sh-sub{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--accent)}
+.section-head .sh-count{margin-left:auto;font-size:.78rem;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.nav-btns{display:flex;gap:8px;align-items:center}
+.nav-btns button{border:1px solid var(--line);background:#fffdf8;width:40px;height:40px;border-radius:10px;font-size:1.1rem;cursor:pointer;color:var(--ink);transition:.15s}
+.nav-btns button:hover{background:var(--ink);color:var(--paper)}
+.today-btn{width:auto!important;padding:0 16px;font-size:.82rem!important;font-weight:600}
+.view-toggle{margin-left:auto}
+/* ===== Agenda: solo días con eventos, texto ajustado ===== */
+.agenda{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;margin-top:14px;align-items:start}
+.daycard{background:#fffdf8;border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.daycard.weekend{background:#f3ece0}
+.daycard.today{outline:2px solid var(--accent);outline-offset:-2px}
+.dhead{display:flex;align-items:baseline;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.5),transparent)}
+.dhead .dnum{font-family:'Fraunces',serif;font-weight:900;font-size:1.5rem;line-height:1;color:var(--ink)}
+.dhead .dwd{font-family:'Fraunces',serif;font-style:italic;font-size:1rem;color:var(--ink)}
+.dhead .dmo{margin-left:auto;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-soft)}
+.evs{display:flex;flex-direction:column;gap:8px;padding:12px 14px}
+.ev{border-left:4px solid var(--cc,var(--c-act));background:color-mix(in srgb,var(--cc,var(--c-act)) 10%,#fff);
+   border-radius:7px;padding:9px 11px;display:flex;flex-direction:column;gap:3px}
+.ev .t{font-weight:700;color:var(--cc);font-variant-numeric:tabular-nums;font-size:.8rem;letter-spacing:.01em}
+.ev .n{color:var(--ink);font-weight:600;font-size:.86rem;line-height:1.3;overflow-wrap:anywhere;white-space:normal}
+.ev .meta{font-size:.74rem;color:var(--ink-soft);line-height:1.35;overflow-wrap:anywhere;white-space:normal}
+.ev .meta b{color:var(--ink);font-weight:600}
+.empty-msg{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--ink-soft);font-style:italic;font-family:'Fraunces',serif}
+.legend{margin-top:30px;border-top:1px solid var(--line);padding-top:18px}
+.legend h3{font-family:'Fraunces',serif;font-weight:600;font-size:1.05rem;margin:0 0 12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:7px;font-size:.78rem;background:#fffdf8;border:1px solid var(--line);padding:6px 11px 6px 8px;border-radius:30px}
+.chip .dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto}
+.chip .cnt{color:var(--ink-soft);font-variant-numeric:tabular-nums;font-weight:700}
+.chip .prof{color:var(--ink-soft);font-style:italic}
+.tzline{margin-top:6px;font-size:.8rem;color:var(--ink-soft)}
+.tzline b{color:var(--accent2)}
+footer{margin-top:40px;font-size:.74rem;color:var(--ink-soft);text-align:center;border-top:1px solid var(--line);padding-top:16px}
+@media(max-width:760px){.agenda{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="kicker">A-MBA Online · Promoción 2028</div>
+      <h1>Calendario Interactivo</h1>
+      <div class="sub">Programa completo de mayo a diciembre de 2026. Filtra por asignatura, profesor o día, y ajusta la hora a tu país.</div>
+    </div>
+    <div class="range-badge"><b>Periodo</b>May → Dic 2026</div>
+  </header>
+  <div class="note">
+    <b>Datos en vivo desde Google Sheets.</b> Este calendario lee <b><span id="liveCount">…</span></b> sesiones directamente de la hoja publicada; al <b>recargar la página</b> (o tocar &laquo;Actualizar datos&raquo;) ves la última versión. Hora base: <b>Costa Rica (UTC&minus;6)</b>. La conversión por país asume que ninguno usa horario de verano. Nota: los cambios hechos en la hoja pueden tardar unos minutos en reflejarse por la cach&eacute; de Google.
+  </div>
+  <div class="controls">
+    <div class="ctl"><label>Mes</label><select id="fMes"></select></div>
+    <div class="ctl"><label>Semana</label><select id="fSemana"></select></div>
+    <div class="ctl"><label>Asignatura / Materia</label><select id="fMateria"></select></div>
+    <div class="ctl"><label>Profesor</label><select id="fProf"></select></div>
+    <div class="ctl"><label>Día de la semana</label>
+      <select id="fDay">
+        <option value="all">Todos los días</option>
+        <option value="1">Lunes</option><option value="2">Martes</option>
+        <option value="3">Miércoles</option><option value="4">Jueves</option>
+        <option value="5">Viernes</option><option value="6">Sábado</option>
+        <option value="0">Domingo</option>
+      </select>
+    </div>
+    <div class="ctl"><label>Zona horaria (país)</label>
+      <select id="fTz">
+        <option value="-6" selected>Costa Rica (UTC&minus;6) · base</option>
+        <option value="-6">Centroamérica · Guatemala, El Salvador, Honduras, Nicaragua (UTC&minus;6)</option>
+        <option value="-5">Panamá (UTC&minus;5)</option>
+        <option value="-5">Perú (UTC&minus;5)</option>
+        <option value="-5">Colombia (UTC&minus;5)</option>
+        <option value="-5">Ecuador (UTC&minus;5)</option>
+      </select>
+    </div>
+    <div class="ctl"><label class="toggle"><input type="checkbox" id="fWeekend"> Solo fines de semana</label></div>
+  </div>
+  <div class="tzline" id="tzLine"></div>
+  <div class="navbar">
+    <div class="title" id="periodTitle"></div>
+    <div class="nav-btns" style="margin-right:auto">
+      <button id="btnReload" class="today-btn" title="Vuelve a leer la hoja de Google Sheets">&#x21bb; Actualizar datos</button>
+    </div>
+    <div class="seg view-toggle">
+      <button data-view="month" class="active">Agrupar por mes</button>
+      <button data-view="week">Agrupar por semana</button>
+    </div>
+  </div>
+  <div id="calArea"></div>
+  <div class="legend"><h3>Asignaturas en este periodo</h3><div class="chips" id="legendChips"></div></div>
+  <footer>Generado desde la base oficial de eventos. Hora base: Costa Rica (UTC&minus;6, sin horario de verano). Conversión: +0 h en Centroamérica · +1 h en Panamá, Perú, Colombia y Ecuador.</footer>
+</div>
+<script>
+const SUBJ = {
+  incae:{name:"INCAE on IA", color:"var(--c-incae)", prof:"Juan Carlos Barahona"},
+  lider:{name:"Liderazgo", color:"var(--c-lider)", prof:"Margaret Grigsby"},
+  creavalor:{name:"Introducción a la Creación de Valor", color:"var(--c-creavalor)", prof:"Carlos Rodríguez / José Humberto Torres"},
+  introconta:{name:"Introducción a la Contabilidad", color:"var(--c-introconta)", prof:"Arnoldo Rodríguez"},
+  matefin:{name:"Matemáticas Financieras", color:"var(--c-matefin)", prof:"Felipe Pérez"},
+  introanalit:{name:"Introducción a la Analítica de datos", color:"var(--c-introanalit)", prof:"Florian Federspiel"},
+  pensa:{name:"Pensamiento Crítico y Toma de Decisiones", color:"var(--c-pensa)", prof:"Octavio Martínez"},
+  cs:{name:"Computer Science for Business", color:"var(--c-cs)", prof:"Andrey Elizondo"},
+  evol:{name:"Evolución digital", color:"var(--c-evol)", prof:"Juan Carlos Barahona"},
+  analit:{name:"Analítica de datos", color:"var(--c-analit)", prof:"Diego Murillo"},
+  comunlid:{name:"Comunicación y Liderazgo", color:"var(--c-comunlid)", prof:"María Elena Carballo"},
+  contafin:{name:"Contabilidad Financiera", color:"var(--c-contafin)", prof:"José Humberto Torres"},
+  finanzas:{name:"Finanzas I", color:"var(--c-finanzas)", prof:"Luis Noel Alfaro"},
+  gerencia:{name:"Gerencia de operaciones", color:"var(--c-gerencia)", prof:"Bernard Kilian"},
+  datamodels:{name:"Data models and decisions", color:"var(--c-datamodels)", prof:"Florian Federspiel"},
+  orgind:{name:"Organización Industrial", color:"var(--c-orgind)", prof:"Conrado Cuevas"},
+  grupoest:{name:"Grupo de Estudio", color:"var(--c-grupoest)", prof:"CAE"},
+  act:{name:"Actividades y logística", color:"var(--c-act)", prof:"—"}
+};
+
+// ===== Capa de datos en vivo: lee la hoja publicada de Google Sheets =====
+const CSV_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vQq3sXfPTvpFc29omeHSN6DL-IvhUlzucQe835MoL02vOLoa2rz1tF2IlNmw6bxP6PpYXDFpmrTMl6W/pub?gid=2113380195&single=true&output=csv";
+
+let EVENTS=[];
+
+// Parser CSV (maneja comillas, comas dentro de campos y comillas escapadas "")
+function parseCSV(text){
+  const rows=[];let row=[],field="",i=0,inQ=false;
+  while(i<text.length){
+    const c=text[i];
+    if(inQ){
+      if(c==='"'){ if(text[i+1]==='"'){field+='"';i++;} else {inQ=false;} }
+      else field+=c;
+    }else{
+      if(c==='"')inQ=true;
+      else if(c===',') {row.push(field);field="";}
+      else if(c==='\n'){row.push(field);rows.push(row);row=[];field="";}
+      else if(c==='\r'){}
+      else field+=c;
+    }
+    i++;
+  }
+  if(field.length||row.length){row.push(field);rows.push(row);}
+  return rows;
+}
+function hmToMin(s){const m=(s||"").trim().match(/^(\d{1,2}):(\d{2})/);return m?(+m[1])*60+(+m[2]):null;}
+
+// Mapeo nombre de asignatura -> clave (para color). Asignaturas nuevas reciben clave y color de reserva.
+const nameToKey={};
+Object.entries(SUBJ).forEach(([k,v])=>{nameToKey[v.name.trim().toLowerCase()]=k;});
+const FALLBACK_COLORS=["#8a5a2f","#2f5a8a","#5a8a2f","#8a2f8a","#2f8a8a","#8a8a2f","#b04a6a"];
+let fbIdx=0;
+function ensureSubj(name){
+  const key=(name||"").trim().toLowerCase();
+  if(nameToKey[key])return nameToKey[key];
+  const nk="auto"+Object.keys(SUBJ).length;
+  SUBJ[nk]={name:(name||"").trim()||"Sin asignatura",color:FALLBACK_COLORS[fbIdx++%FALLBACK_COLORS.length],prof:""};
+  nameToKey[key]=nk;
+  return nk;
+}
+
+async function loadData(){
+  const calArea=document.getElementById("calArea");
+  calArea.innerHTML='<div class="empty-msg">Cargando datos desde Google Sheets&hellip;</div>';
+  try{
+    const res=await fetch(CSV_URL+"&_="+Date.now(),{cache:"no-store"});
+    if(!res.ok)throw new Error("HTTP "+res.status);
+    const text=await res.text();
+    let rows=parseCSV(text).filter(r=>r.length>=4 && (r[0]||"").trim());
+    if(rows.length && /fecha/i.test(rows[0][0])) rows.shift(); // descarta encabezado
+    const evs=[];
+    rows.forEach(r=>{
+      const fecha=(r[0]||"").trim();
+      const dm=fecha.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      const mi=hmToMin(r[1]);
+      if(!dm||mi==null)return;
+      const mf=hmToMin(r[2]);
+      const subj=ensureSubj((r[3]||"").trim()||"Actividades y logística");
+      const profe=(r[4]||"").trim();
+      evs.push({y:+dm[1],m:(+dm[2])-1,d:+dm[3],dateKey:fecha,min:mi,end:(mf==null?mi:mf),
+        subj:subj,label:(r[5]||"").trim(),ses:(r[6]||"").trim(),loc:(r[7]||"").trim(),
+        prof:(profe||SUBJ[subj].prof||"\u2014")});
+    });
+    EVENTS=evs;
+    const lc=document.getElementById("liveCount");if(lc)lc.textContent=EVENTS.length;
+    initFilters();
+    render();
+  }catch(err){
+    EVENTS=[];
+    calArea.innerHTML='<div class="empty-msg" style="text-align:left;max-width:640px;margin:0 auto">'+
+      '<b>No se pudieron cargar los datos.</b><br><br>'+
+      'Causa probable: el archivo se abri&oacute; directamente desde el disco (file://) y el navegador bloquea la conexi&oacute;n por seguridad, o no hay conexi&oacute;n a internet.<br><br>'+
+      'Soluci&oacute;n: publica este HTML en un hosting (Paso 5) y &aacute;brelo por su enlace https. As&iacute; la lectura de Google Sheets funciona sin problemas.<br><br>'+
+      '<small>Detalle t&eacute;cnico: '+((err&&err.message)?err.message:err)+'</small></div>';
+  }
+}
+
+
+const BASE_TZ=-6;
+const MONTHS=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const DOWS=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+const DOWL=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+const state={view:"month", cur:new Date(2026,4,1), weekStart:startOfWeek(new Date(2026,4,4)),
+  materia:"all", prof:"all", day:"all", month:"all", week:"all", tz:-6, weekend:false, tzLabel:"Costa Rica (UTC\u22126)"};
+function startOfWeek(dt){const x=new Date(dt);x.setHours(0,0,0,0);const day=x.getDay();x.setDate(x.getDate()+(day===0?-6:1-day));return x;}
+function pad(n){return String(n).padStart(2,"0");}
+function keyOf(dt){return dt.getFullYear()+"-"+pad(dt.getMonth()+1)+"-"+pad(dt.getDate());}
+function shiftMin(min, tz){return min + (tz - BASE_TZ)*60;}
+function fmtTime(min){let t=((min%1440)+1440)%1440;let h=Math.floor(t/60),m=t%60;const ap=h>=12?"pm":"am";let hh=h%12;if(hh===0)hh=12;return m===0?(hh+ap):(hh+":"+pad(m)+ap);}
+
+const fMateria=document.getElementById("fMateria");
+const fProf=document.getElementById("fProf");
+const fMes=document.getElementById("fMes");
+// Rellena los desplegables a partir de los datos ya cargados (se llama dentro de loadData)
+function initFilters(){
+  const usedSubj=new Set(EVENTS.map(e=>e.subj));
+  fMateria.innerHTML='<option value="all">Todas las asignaturas</option>'+
+    Object.entries(SUBJ).filter(([k])=>usedSubj.has(k)).map(([k,v])=>'<option value="'+k+'">'+v.name+'</option>').join("");
+  const profs=[...new Set(EVENTS.map(e=>e.prof))].filter(p=>p&&p!=="\u2014").sort((a,b)=>a.localeCompare(b,'es'));
+  fProf.innerHTML='<option value="all">Todos los profesores</option>'+profs.map(p=>'<option value="'+p+'">'+p+'</option>').join("");
+  const monthKeys=[...new Set(EVENTS.map(e=>e.y+"-"+pad(e.m+1)))].sort();
+  fMes.innerHTML='<option value="all">Todos los meses</option>'+
+    monthKeys.map(k=>{const [y,m]=k.split("-");return '<option value="'+k+'">'+MONTHS[Number(m)-1]+' '+y+'</option>';}).join("");
+  populateWeeks();
+}
+
+const fSemana=document.getElementById("fSemana");
+function fmtWeekLabel(mon,sun){
+  return mon.getDate()+" de "+MONTHS[mon.getMonth()].toLowerCase()+" \u2013 "+sun.getDate()+" de "+MONTHS[sun.getMonth()].toLowerCase();
+}
+function populateWeeks(){
+  if(state.month==="all"){
+    fSemana.innerHTML='<option value="all">Elige un mes primero</option>';
+    fSemana.disabled=true; state.week="all"; return;
+  }
+  fSemana.disabled=false;
+  const [y,m]=state.month.split("-").map(Number);
+  const firstDay=new Date(y,m-1,1), lastDay=new Date(y,m,0);
+  let cur=startOfWeek(firstDay);
+  let opts='<option value="all">Todas las semanas</option>';
+  while(cur<=lastDay){
+    const mon=new Date(cur), sun=new Date(cur);sun.setDate(sun.getDate()+6);
+    opts+='<option value="'+keyOf(mon)+'">'+fmtWeekLabel(mon,sun)+'</option>';
+    cur.setDate(cur.getDate()+7);
+  }
+  fSemana.innerHTML=opts; state.week="all";
+}
+
+function passFilters(e, dt){
+  if(state.week!=="all"){
+    const ms=new Date(state.week+"T00:00:00"), me=new Date(ms);me.setDate(me.getDate()+6);
+    if(dt<ms||dt>me) return false;
+  } else if(state.month!=="all" && (dt.getFullYear()+"-"+pad(dt.getMonth()+1))!==state.month) return false;
+  if(state.materia!=="all" && e.subj!==state.materia) return false;
+  if(state.prof!=="all" && e.prof!==state.prof) return false;
+  const dow=dt.getDay();
+  if(state.weekend && !(dow===0||dow===6)) return false;
+  if(state.day!=="all" && dow!==Number(state.day)) return false;
+  return true;
+}
+function eventsByDay(dateKey){
+  return EVENTS.filter(e=>e.dateKey===dateKey).map(e=>({...e,dispMin:shiftMin(e.min,state.tz),dispEnd:(e.end!=null?shiftMin(e.end,state.tz):null)})).sort((a,b)=>a.dispMin-b.dispMin);
+}
+const calArea=document.getElementById("calArea");
+const periodTitle=document.getElementById("periodTitle");
+function tip(e){let s=SUBJ[e.subj].name;if(e.prof!=="\u2014")s+=" \u00b7 "+e.prof;if(e.ses)s+=" \u00b7 Sesi\u00f3n "+e.ses;return s.replace(/"/g,"&quot;");}
+function timeRange(e){const a=fmtTime(e.dispMin);if(e.dispEnd!=null&&e.dispEnd!==e.dispMin)return a+" \u2013 "+fmtTime(e.dispEnd);return a;}
+function evHTML(e){
+  const c=SUBJ[e.subj].color;
+  let meta=[];
+  if(e.prof!=="\u2014")meta.push('<b>Prof.</b> '+e.prof);
+  if(e.ses)meta.push('<b>Sesi\u00f3n</b> '+e.ses);
+  return '<div class="ev" style="--cc:'+c+'" title="'+tip(e)+'">'+
+    '<span class="t">'+timeRange(e)+'</span>'+
+    '<span class="n">'+e.label+'</span>'+
+    (meta.length?'<span class="meta">'+meta.join(" \u00b7 ")+'</span>':'')+
+    '</div>';
+}
+/* Build the day-cards HTML for a list of Date objects (only days with filtered events). */
+function dayCardsHTML(days){
+  const todayKey=keyOf(new Date());let html="",count=0;
+  days.forEach(dt=>{
+    const dk=keyOf(dt),dow=dt.getDay();
+    const evs=eventsByDay(dk).filter(e=>passFilters(e,dt));
+    if(!evs.length)return;
+    count+=evs.length;
+    const cls=["daycard"];if(dow===0||dow===6)cls.push("weekend");if(dk===todayKey)cls.push("today");
+    html+='<div class="'+cls.join(' ')+'">'+
+      '<div class="dhead"><span class="dnum">'+dt.getDate()+'</span><span class="dwd">'+DOWL[dow]+'</span>'+
+      '<span class="dmo">'+MONTHS[dt.getMonth()].slice(0,3)+' '+dt.getFullYear()+'</span></div>'+
+      '<div class="evs">'+evs.map(evHTML).join("")+'</div></div>';
+  });
+  return {html, count};
+}
+/* Date range spanning the whole dataset. */
+function datasetBounds(){
+  let min=null,max=null;
+  EVENTS.forEach(e=>{const dt=new Date(e.y,e.m,e.d);if(!min||dt<min)min=dt;if(!max||dt>max)max=dt;});
+  return [min,max];
+}
+function plural(n){return n===1?"1 sesión":n+" sesiones";}
+
+/* MONTH MODE: all filtered events, grouped into month blocks stacked downward. */
+function renderMonth(){
+  const [min,max]=datasetBounds();
+  let html="",totalDays=0,totalEv=0,blocks=0;
+  let y=min.getFullYear(),m=min.getMonth();
+  while(y<max.getFullYear() || (y===max.getFullYear() && m<=max.getMonth())){
+    const daysIn=new Date(y,m+1,0).getDate();
+    const days=[];for(let d=1;d<=daysIn;d++)days.push(new Date(y,m,d));
+    const {html:cards,count}=dayCardsHTML(days);
+    if(count){
+      blocks++;totalEv+=count;
+      html+='<div class="section"><div class="section-head">'+
+        '<span class="sh-title">'+MONTHS[m]+' '+y+'</span>'+
+        '<span class="sh-count">'+plural(count)+'</span></div>'+
+        '<div class="agenda">'+cards+'</div></div>';
+    }
+    m++;if(m>11){m=0;y++;}
+  }
+  periodTitle.innerHTML=html?('<b>'+blocks+'</b> '+(blocks===1?'mes':'meses')+' \u00b7 <b>'+totalEv+'</b> sesiones'):'';
+  calArea.innerHTML=html||'<div class="empty-msg">No hay eventos que coincidan con los filtros.</div>';
+}
+
+/* WEEK MODE: all filtered events, grouped into week blocks stacked downward. */
+function renderWeek(){
+  const [min,max]=datasetBounds();
+  let cur=startOfWeek(min);
+  let html="",blocks=0,totalEv=0;
+  while(cur<=max){
+    const days=[];for(let i=0;i<7;i++){const dt=new Date(cur);dt.setDate(dt.getDate()+i);days.push(dt);}
+    const {html:cards,count}=dayCardsHTML(days);
+    if(count){
+      blocks++;totalEv+=count;
+      const ws=days[0],end=days[6];
+      const sameMonth=ws.getMonth()===end.getMonth();
+      const label=sameMonth
+        ? (ws.getDate()+"\u2013"+end.getDate()+" "+MONTHS[ws.getMonth()]+" "+ws.getFullYear())
+        : (ws.getDate()+" "+MONTHS[ws.getMonth()].slice(0,3)+" \u2013 "+end.getDate()+" "+MONTHS[end.getMonth()].slice(0,3)+" "+end.getFullYear());
+      html+='<div class="section"><div class="section-head">'+
+        '<span class="sh-sub">Semana</span><span class="sh-title" style="font-size:clamp(1.1rem,2.4vw,1.5rem)">'+label+'</span>'+
+        '<span class="sh-count">'+plural(count)+'</span></div>'+
+        '<div class="agenda">'+cards+'</div></div>';
+    }
+    cur.setDate(cur.getDate()+7);
+  }
+  periodTitle.innerHTML=html?('<b>'+blocks+'</b> '+(blocks===1?'semana':'semanas')+' \u00b7 <b>'+totalEv+'</b> sesiones'):'';
+  calArea.innerHTML=html||'<div class="empty-msg">No hay eventos que coincidan con los filtros.</div>';
+}
+function renderLegend(){
+  const counts={};
+  EVENTS.forEach(e=>{const dt=new Date(e.y,e.m,e.d);if(passFilters(e,dt))counts[e.subj]=(counts[e.subj]||0)+1;});
+  const chips=Object.entries(SUBJ).filter(([k])=>counts[k]).map(([k,v])=>{
+    const profTxt=v.prof!=="\u2014"?' \u00b7 <span class="prof">'+v.prof+'</span>':'';
+    return '<span class="chip"><span class="dot" style="background:'+v.color+'"></span>'+v.name+profTxt+' <span class="cnt">'+counts[k]+'</span></span>';
+  }).join("");
+  document.getElementById("legendChips").innerHTML=chips||'<span class="chip">Sin coincidencias</span>';
+}
+function render(){
+  if(!EVENTS.length){return;}
+  if(state.view==="month")renderMonth();else renderWeek();
+  renderLegend();
+  const diff=state.tz-BASE_TZ;
+  document.getElementById("tzLine").innerHTML=diff===0?('Mostrando horas en <b>'+state.tzLabel+'</b> \u2014 coinciden con la hora base de Costa Rica.'):('Mostrando horas en <b>'+state.tzLabel+'</b> \u2014 '+(diff>0?'+':'')+diff+' h respecto a Costa Rica.');
+}
+document.querySelectorAll(".seg.view-toggle button").forEach(b=>{b.onclick=()=>{document.querySelectorAll(".seg.view-toggle button").forEach(x=>x.classList.remove("active"));b.classList.add("active");state.view=b.dataset.view;render();};});
+fMateria.onchange=e=>{state.materia=e.target.value;render();};
+document.getElementById("fMes").onchange=e=>{state.month=e.target.value;populateWeeks();render();};
+document.getElementById("fSemana").onchange=e=>{state.week=e.target.value;render();};
+fProf.onchange=e=>{state.prof=e.target.value;render();};
+document.getElementById("fDay").onchange=e=>{state.day=e.target.value;render();};
+document.getElementById("fWeekend").onchange=e=>{state.weekend=e.target.checked;document.getElementById("fDay").disabled=e.target.checked;if(e.target.checked){document.getElementById("fDay").value="all";state.day="all";}render();};
+document.getElementById("fTz").onchange=e=>{state.tz=Number(e.target.value);state.tzLabel=e.target.options[e.target.selectedIndex].text.replace(/ \u00b7.*/,'').trim();render();};
+const _btn=document.getElementById("btnReload");if(_btn)_btn.onclick=()=>loadData();
+loadData();
+</script>
+</body>
+</html>

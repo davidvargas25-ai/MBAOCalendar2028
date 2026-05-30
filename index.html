@@ -72,6 +72,7 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .nav-btns button{border:1px solid var(--line);background:#fffdf8;width:40px;height:40px;border-radius:10px;font-size:1.1rem;cursor:pointer;color:var(--ink);transition:.15s}
 .nav-btns button:hover{background:var(--ink);color:var(--paper)}
 .today-btn{width:auto!important;padding:0 16px;font-size:.82rem!important;font-weight:600}
+.today-btn.active{background:var(--accent2)!important;color:#fff!important;border-color:var(--accent2)!important}
 .view-toggle{margin-left:auto}
 /* ===== Agenda: solo días con eventos, texto ajustado ===== */
 .agenda{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;margin-top:14px;align-items:start}
@@ -147,6 +148,8 @@ footer{margin-top:40px;font-size:.74rem;color:var(--ink-soft);text-align:center;
     <div class="title" id="periodTitle"></div>
     <div class="nav-btns" style="margin-right:auto">
       <button id="btnReload" class="today-btn" title="Vuelve a leer la hoja de Google Sheets">&#x21bb; Actualizar datos</button>
+      <button id="btnTasks" class="today-btn" title="Muestra únicamente entregables / tareas">&#9745; Solo entregables</button>
+      <button id="btnClear" class="today-btn" title="Restablece materia, profesor, día, mes, semana y entregables">&#10005; Limpiar filtros</button>
     </div>
     <div class="seg view-toggle">
       <button data-view="month" class="active">Agrupar por mes</button>
@@ -240,6 +243,7 @@ async function loadData(){
       const profe=(r[4]||"").trim();
       evs.push({y:+dm[1],m:(+dm[2])-1,d:+dm[3],dateKey:fecha,min:mi,end:(mf==null?mi:mf),
         subj:subj,label:(r[5]||"").trim(),ses:(r[6]||"").trim(),loc:(r[7]||"").trim(),
+        tipo:(r[8]||"").trim(),
         prof:(profe||SUBJ[subj].prof||"\u2014")});
     });
     EVENTS=evs;
@@ -263,13 +267,13 @@ const MONTHS=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto",
 const DOWS=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 const DOWL=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
 const state={view:"month", cur:new Date(2026,4,1), weekStart:startOfWeek(new Date(2026,4,4)),
-  materia:"all", prof:"all", day:"all", month:"all", week:"all", tz:-6, weekend:false, tzLabel:"Costa Rica (UTC\u22126)"};
+  materia:"all", prof:"all", day:"all", month:"all", week:"all", tz:-6, weekend:false, task:false, tzLabel:"Costa Rica (UTC\u22126)"};
 // ===== Memoria de filtros: recuerda lo seleccionado al recargar =====
 const STORE_KEY="mbao2028_filtros";
 function saveState(){
   try{localStorage.setItem(STORE_KEY,JSON.stringify({
     view:state.view, materia:state.materia, prof:state.prof, day:state.day,
-    month:state.month, week:state.week, weekend:state.weekend,
+    month:state.month, week:state.week, weekend:state.weekend, task:state.task,
     tzIdx:document.getElementById("fTz").selectedIndex
   }));}catch(e){}
 }
@@ -284,6 +288,7 @@ function loadState(){
     if(s.month)state.month=s.month;
     if(s.week)state.week=s.week;
     if(typeof s.weekend==="boolean")state.weekend=s.weekend;
+    if(typeof s.task==="boolean")state.task=s.task;
     if(s.tzIdx!=null)state._tzIdx=s.tzIdx;
   }catch(e){}
 }
@@ -303,6 +308,7 @@ function applyStateToControls(){
     state.tzLabel=g("fTz").options[g("fTz").selectedIndex].text.replace(/ \u00b7.*/,'').trim();
   }
   g("fWeekend").checked=state.weekend;
+  const bt=g("btnTasks");if(bt)bt.classList.toggle("active",!!state.task);
   g("fDay").disabled=state.weekend;
   populateWeeks();
   state.week=setSel(g("fSemana"),state.week);
@@ -351,7 +357,10 @@ function populateWeeks(){
   fSemana.innerHTML=opts;
 }
 
+// Una fila es entregable/tarea si su columna Tipo contiene "entreg" o "tarea"
+function isTask(e){return /entreg|tarea/.test((e.tipo||"").toLowerCase());}
 function passFilters(e, dt){
+  if(state.task && !isTask(e)) return false;
   if(state.week!=="all"){
     const ms=new Date(state.week+"T00:00:00"), me=new Date(ms);me.setDate(me.getDate()+6);
     if(dt<ms||dt>me) return false;
@@ -375,9 +384,11 @@ function evHTML(e){
   let meta=[];
   if(e.prof!=="\u2014")meta.push('<b>Prof.</b> '+e.prof);
   if(e.ses)meta.push('<b>Sesi\u00f3n</b> '+e.ses);
+  if(e.loc)meta.push('<b>Aula</b> '+e.loc);
+  if(e.tipo)meta.push('<b>Tipo</b> '+e.tipo);
   return '<div class="ev" style="--cc:'+c+'" title="'+tip(e)+'">'+
     '<span class="t">'+timeRange(e)+'</span>'+
-    '<span class="n">'+e.label+'</span>'+
+    '<span class="n">'+SUBJ[e.subj].name+'</span>'+
     (meta.length?'<span class="meta">'+meta.join(" \u00b7 ")+'</span>':'')+
     '</div>';
 }
@@ -477,6 +488,13 @@ document.getElementById("fDay").onchange=e=>{state.day=e.target.value;saveState(
 document.getElementById("fWeekend").onchange=e=>{state.weekend=e.target.checked;document.getElementById("fDay").disabled=e.target.checked;if(e.target.checked){document.getElementById("fDay").value="all";state.day="all";}saveState();render();};
 document.getElementById("fTz").onchange=e=>{state.tz=Number(e.target.value);state.tzLabel=e.target.options[e.target.selectedIndex].text.replace(/ \u00b7.*/,'').trim();saveState();render();};
 const _btn=document.getElementById("btnReload");if(_btn)_btn.onclick=()=>loadData();
+function toggleTasks(){state.task=!state.task;const b=document.getElementById("btnTasks");if(b)b.classList.toggle("active",state.task);saveState();render();}
+function clearFilters(){
+  state.materia="all";state.prof="all";state.day="all";state.month="all";state.week="all";state.weekend=false;state.task=false;
+  applyStateToControls();saveState();render();
+}
+const _bt=document.getElementById("btnTasks");if(_bt)_bt.onclick=toggleTasks;
+const _bc=document.getElementById("btnClear");if(_bc)_bc.onclick=clearFilters;
 loadState();
 loadData();
 </script>

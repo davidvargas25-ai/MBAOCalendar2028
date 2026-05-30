@@ -90,6 +90,8 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .ev .n{color:var(--ink);font-weight:600;font-size:.86rem;line-height:1.3;overflow-wrap:anywhere;white-space:normal}
 .ev .meta{font-size:.74rem;color:var(--ink-soft);line-height:1.35;overflow-wrap:anywhere;white-space:normal}
 .ev .meta b{color:var(--ink);font-weight:600}
+.ev .xday{color:var(--accent);font-weight:700}
+.ev .meta .xday{color:var(--accent)}
 .empty-msg{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--ink-soft);font-style:italic;font-family:'Fraunces',serif}
 .legend{margin-top:30px;border-top:1px solid var(--line);padding-top:18px}
 .legend h3{font-family:'Fraunces',serif;font-weight:600;font-size:1.05rem;margin:0 0 12px}
@@ -381,13 +383,15 @@ function tip(e){let s=SUBJ[e.subj].name;if(e.prof!=="\u2014")s+=" \u00b7 "+e.pro
 function timeRange(e){const a=fmtTime(e.dispMin);if(e.dispEnd!=null&&e.dispEnd!==e.dispMin)return a+" \u2013 "+fmtTime(e.dispEnd);return a;}
 function evHTML(e){
   const c=SUBJ[e.subj].color;
+  const cross=e.dispMin>=1440; // la hora convertida cae en la madrugada del día siguiente
   let meta=[];
   if(e.prof!=="\u2014")meta.push('<b>Prof.</b> '+e.prof);
   if(e.ses)meta.push('<b>Sesi\u00f3n</b> '+e.ses);
   if(e.loc)meta.push('<b>Aula</b> '+e.loc);
   if(e.tipo)meta.push('<b>Tipo</b> '+e.tipo);
+  if(cross)meta.push('<b class="xday">Aviso:</b> esta hora ya es de la madrugada del d\u00eda siguiente en tu huso; la fecha mostrada arriba es la que corresponde (hora Costa Rica).');
   return '<div class="ev" style="--cc:'+c+'" title="'+tip(e)+'">'+
-    '<span class="t">'+timeRange(e)+'</span>'+
+    '<span class="t">'+timeRange(e)+(cross?' <span class="xday">(d\u00eda sig.)</span>':'')+'</span>'+
     '<span class="n">'+SUBJ[e.subj].name+'</span>'+
     (meta.length?'<span class="meta">'+meta.join(" \u00b7 ")+'</span>':'')+
     '</div>';

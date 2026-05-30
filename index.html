@@ -245,6 +245,7 @@ async function loadData(){
     EVENTS=evs;
     const lc=document.getElementById("liveCount");if(lc)lc.textContent=EVENTS.length;
     initFilters();
+    applyStateToControls();
     render();
   }catch(err){
     EVENTS=[];
@@ -263,6 +264,49 @@ const DOWS=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 const DOWL=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
 const state={view:"month", cur:new Date(2026,4,1), weekStart:startOfWeek(new Date(2026,4,4)),
   materia:"all", prof:"all", day:"all", month:"all", week:"all", tz:-6, weekend:false, tzLabel:"Costa Rica (UTC\u22126)"};
+// ===== Memoria de filtros: recuerda lo seleccionado al recargar =====
+const STORE_KEY="mbao2028_filtros";
+function saveState(){
+  try{localStorage.setItem(STORE_KEY,JSON.stringify({
+    view:state.view, materia:state.materia, prof:state.prof, day:state.day,
+    month:state.month, week:state.week, weekend:state.weekend,
+    tzIdx:document.getElementById("fTz").selectedIndex
+  }));}catch(e){}
+}
+function loadState(){
+  try{
+    const s=JSON.parse(localStorage.getItem(STORE_KEY)||"null");
+    if(!s)return;
+    if(s.view)state.view=s.view;
+    if(s.materia)state.materia=s.materia;
+    if(s.prof)state.prof=s.prof;
+    if(s.day)state.day=s.day;
+    if(s.month)state.month=s.month;
+    if(s.week)state.week=s.week;
+    if(typeof s.weekend==="boolean")state.weekend=s.weekend;
+    if(s.tzIdx!=null)state._tzIdx=s.tzIdx;
+  }catch(e){}
+}
+// Selecciona un valor en un <select>; si la opción ya no existe, cae en "all"
+function setSel(el,val){ el.value=val; if(el.value!==val){el.value="all";return "all";} return val; }
+// Reaplica el estado a los controles del DOM (tras reconstruir las opciones)
+function applyStateToControls(){
+  const g=id=>document.getElementById(id);
+  document.querySelectorAll(".seg.view-toggle button").forEach(b=>b.classList.toggle("active",b.dataset.view===state.view));
+  state.materia=setSel(fMateria,state.materia);
+  state.prof=setSel(fProf,state.prof);
+  state.day=setSel(g("fDay"),state.day);
+  state.month=setSel(fMes,state.month);
+  if(state._tzIdx!=null && g("fTz").options[state._tzIdx]){
+    g("fTz").selectedIndex=state._tzIdx;
+    state.tz=Number(g("fTz").value);
+    state.tzLabel=g("fTz").options[g("fTz").selectedIndex].text.replace(/ \u00b7.*/,'').trim();
+  }
+  g("fWeekend").checked=state.weekend;
+  g("fDay").disabled=state.weekend;
+  populateWeeks();
+  state.week=setSel(g("fSemana"),state.week);
+}
 function startOfWeek(dt){const x=new Date(dt);x.setHours(0,0,0,0);const day=x.getDay();x.setDate(x.getDate()+(day===0?-6:1-day));return x;}
 function pad(n){return String(n).padStart(2,"0");}
 function keyOf(dt){return dt.getFullYear()+"-"+pad(dt.getMonth()+1)+"-"+pad(dt.getDate());}
@@ -304,7 +348,7 @@ function populateWeeks(){
     opts+='<option value="'+keyOf(mon)+'">'+fmtWeekLabel(mon,sun)+'</option>';
     cur.setDate(cur.getDate()+7);
   }
-  fSemana.innerHTML=opts; state.week="all";
+  fSemana.innerHTML=opts;
 }
 
 function passFilters(e, dt){
@@ -424,15 +468,16 @@ function render(){
   const diff=state.tz-BASE_TZ;
   document.getElementById("tzLine").innerHTML=diff===0?('Mostrando horas en <b>'+state.tzLabel+'</b> \u2014 coinciden con la hora base de Costa Rica.'):('Mostrando horas en <b>'+state.tzLabel+'</b> \u2014 '+(diff>0?'+':'')+diff+' h respecto a Costa Rica.');
 }
-document.querySelectorAll(".seg.view-toggle button").forEach(b=>{b.onclick=()=>{document.querySelectorAll(".seg.view-toggle button").forEach(x=>x.classList.remove("active"));b.classList.add("active");state.view=b.dataset.view;render();};});
-fMateria.onchange=e=>{state.materia=e.target.value;render();};
-document.getElementById("fMes").onchange=e=>{state.month=e.target.value;populateWeeks();render();};
-document.getElementById("fSemana").onchange=e=>{state.week=e.target.value;render();};
-fProf.onchange=e=>{state.prof=e.target.value;render();};
-document.getElementById("fDay").onchange=e=>{state.day=e.target.value;render();};
-document.getElementById("fWeekend").onchange=e=>{state.weekend=e.target.checked;document.getElementById("fDay").disabled=e.target.checked;if(e.target.checked){document.getElementById("fDay").value="all";state.day="all";}render();};
-document.getElementById("fTz").onchange=e=>{state.tz=Number(e.target.value);state.tzLabel=e.target.options[e.target.selectedIndex].text.replace(/ \u00b7.*/,'').trim();render();};
+document.querySelectorAll(".seg.view-toggle button").forEach(b=>{b.onclick=()=>{document.querySelectorAll(".seg.view-toggle button").forEach(x=>x.classList.remove("active"));b.classList.add("active");state.view=b.dataset.view;saveState();render();};});
+fMateria.onchange=e=>{state.materia=e.target.value;saveState();render();};
+document.getElementById("fMes").onchange=e=>{state.month=e.target.value;state.week="all";populateWeeks();document.getElementById("fSemana").value="all";saveState();render();};
+document.getElementById("fSemana").onchange=e=>{state.week=e.target.value;saveState();render();};
+fProf.onchange=e=>{state.prof=e.target.value;saveState();render();};
+document.getElementById("fDay").onchange=e=>{state.day=e.target.value;saveState();render();};
+document.getElementById("fWeekend").onchange=e=>{state.weekend=e.target.checked;document.getElementById("fDay").disabled=e.target.checked;if(e.target.checked){document.getElementById("fDay").value="all";state.day="all";}saveState();render();};
+document.getElementById("fTz").onchange=e=>{state.tz=Number(e.target.value);state.tzLabel=e.target.options[e.target.selectedIndex].text.replace(/ \u00b7.*/,'').trim();saveState();render();};
 const _btn=document.getElementById("btnReload");if(_btn)_btn.onclick=()=>loadData();
+loadState();
 loadData();
 </script>
 </body>

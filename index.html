@@ -90,6 +90,7 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .nav-btns button{border:1px solid var(--line);background:#fff;width:40px;height:36px;border-radius:9px;font-size:1rem;cursor:pointer;color:var(--ink);transition:.15s}
 .nav-btns button:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
 .today-btn{width:auto!important;padding:0 14px;font-size:.8rem!important;font-weight:600;height:36px}
+.filtros-toggle{display:none}
 .today-btn.active{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}
 .view-toggle{margin-left:auto}
 /* ===== Rejilla de 7 columnas por día de la semana ===== */
@@ -133,7 +134,14 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .tzline{margin-top:6px;font-size:.74rem;color:var(--ink-soft)}
 .tzline b{color:var(--accent2)}
 @media(max-width:820px){.weekhead{display:none}.weekrow{grid-template-columns:1fr}.daycell.noev,.daycell.out{display:none}.daycell .dch{border-bottom:1px solid var(--line);padding-bottom:3px}}
-@media(max-width:760px){.brand h1{font-size:1.15rem}}
+@media(max-width:760px){.brand h1{font-size:1.15rem}
+  .filtros-toggle{display:inline-flex;align-items:center;gap:5px}
+  .filtros-toggle .caret{transition:transform .15s}
+  .topbar.filtros-open .filtros-toggle .caret{transform:rotate(180deg)}
+  .controls{display:none}
+  .topbar.filtros-open .controls{display:grid}
+  .statusline{display:none}
+}
 </style>
 </head>
 <body>
@@ -152,6 +160,7 @@ select:disabled{opacity:.5;cursor:not-allowed}
       <button data-view="month" class="active">Mes</button>
       <button data-view="week">Semana</button>
     </div>
+    <button id="btnFiltros" class="today-btn filtros-toggle" type="button" aria-expanded="false" title="Mostrar u ocultar los filtros">Filtros <span class="caret">&#9662;</span></button>
   </header>
   <div class="controls">
     <div class="ctl"><label>Mes</label><div class="ms" id="msMes"><button type="button" class="ms-btn" data-ph="Todos los meses">Todos los meses</button><div class="ms-panel"></div></div></div>
@@ -613,6 +622,7 @@ function clearFilters(){
 const _bt=document.getElementById("btnTasks");if(_bt)_bt.onclick=toggleTasks;
 const _bx=document.getElementById("btnExams");if(_bx)_bx.onclick=toggleExams;
 const _bw=document.getElementById("btnWeekend");if(_bw)_bw.onclick=toggleWeekend;
+const _bf=document.getElementById("btnFiltros");if(_bf)_bf.onclick=()=>{const tb=document.querySelector(".topbar");const open=tb.classList.toggle("filtros-open");_bf.setAttribute("aria-expanded",open?"true":"false");};
 const _bc=document.getElementById("btnClear");if(_bc)_bc.onclick=clearFilters;
 loadState();
 loadData();

@@ -395,14 +395,19 @@ function timeRange(e){const a=fmtTime(e.dispMin);if(e.dispEnd!=null&&e.dispEnd!=
 function evHTML(e){
   const c=SUBJ[e.subj].color;
   if(isTask(e)){
-    // Entregable: ficha reducida (hora de fin, asignatura, título, profesor, aviso de huso)
-    const dEnd=(e.dispEnd!=null?e.dispEnd:e.dispMin);
-    const cross=dEnd>=1440;
+    // Entregable: ficha reducida (hora de fin, asignatura, título, profesor).
+    // Si por el huso la hora de fin cruza de fecha, mantenemos la hora de Costa Rica
+    // y avisamos del margen extra; si no cruza, se muestra la hora convertida normal.
+    const diff=state.tz-BASE_TZ;
+    const endConv=(e.dispEnd!=null?e.dispEnd:e.dispMin); // hora de fin convertida al huso del lector
+    const endCR=(e.end!=null?e.end:e.min);               // hora de fin en Costa Rica
+    const crosses=endConv>=1440||endConv<0;              // cambia de día al convertir
+    const showMin=crosses?endCR:endConv;
     let meta=[];
     if(e.prof!=="\u2014")meta.push('<b>Prof.</b> '+e.prof);
-    if(cross)meta.push('<b class="xday">Aviso:</b> esta hora ya es de la madrugada del d\u00eda siguiente en tu huso; la fecha mostrada arriba es la que corresponde (hora Costa Rica).');
+    if(crosses&&diff>0)meta.push('<b class="xday">Por husos horarios</b> tienes '+diff+' hora'+(diff===1?'':'s')+' m\u00e1s para finalizar esta tarea.');
     return '<div class="ev" style="--cc:'+c+'" title="'+tip(e)+'">'+
-      '<span class="t">Entrega \u00b7 '+fmtTime(dEnd)+(cross?' <span class="xday">(d\u00eda sig.)</span>':'')+'</span>'+
+      '<span class="t">Entrega \u00b7 '+fmtTime(showMin)+(crosses?' <span class="xday">(hora CR)</span>':'')+'</span>'+
       '<span class="n">'+SUBJ[e.subj].name+'</span>'+
       (e.label?'<span class="ti">'+e.label+'</span>':'')+
       (meta.length?'<span class="meta">'+meta.join(" \u00b7 ")+'</span>':'')+

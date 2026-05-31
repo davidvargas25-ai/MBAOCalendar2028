@@ -44,7 +44,7 @@ html,body{height:100%}
 .topbar{flex:0 0 auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:10px;box-shadow:0 10px 26px -14px rgba(0,0,0,.5)}
 header.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:8px}
 .brand .kicker{font-size:.62rem;letter-spacing:.26em;text-transform:uppercase;color:var(--accent);font-weight:700}
-.brand h1{font-family:'Fraunces',serif;font-weight:900;font-size:1.3rem;line-height:1;margin:.1em 0 0;color:var(--ink)}
+.brand h1{font-family:'Fraunces',serif;font-weight:700;font-size:1.05rem;line-height:1;margin:0;color:var(--ink)}
 .brand .sub{display:none}
 .range-badge{font-family:'Fraunces',serif;font-style:italic;font-size:.9rem;color:var(--ink-soft);text-align:right}
 .range-badge b{display:block;font-style:normal;font-weight:600;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);margin-bottom:1px}
@@ -100,6 +100,9 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .ev .meta b{color:var(--ink);font-weight:600}
 .ev .xday{color:var(--accent2);font-weight:700}
 .ev .meta .xday{color:var(--accent2)}
+.ev .glist{list-style:none;margin:3px 0 0;padding:0;display:flex;flex-direction:column;gap:3px}
+.ev .glist li{font-size:.72rem;color:var(--ink);line-height:1.25;overflow-wrap:anywhere}
+.ev .glist .gt{font-weight:700;color:var(--cc);font-variant-numeric:tabular-nums;font-size:.7rem;margin-right:3px}
 .empty-msg{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--on-dark-soft);font-style:italic;font-family:'Fraunces',serif}
 .legend{flex:0 0 auto;margin-top:8px;border-top:1px solid rgba(255,255,255,.2);padding-top:8px;max-height:80px;overflow-y:auto}
 .legend h3{font-family:'Fraunces',serif;font-weight:600;font-size:.82rem;margin:0 0 6px;color:var(--on-dark)}
@@ -118,12 +121,13 @@ select:disabled{opacity:.5;cursor:not-allowed}
 <div class="wrap">
   <div class="topbar">
   <header class="top">
-    <div class="brand">
-      <div class="kicker">MBAO 2028</div>
-      <h1>Calendario Interactivo</h1>
-      <div class="sub">Programa completo de mayo a diciembre de 2026. Filtra por asignatura, profesor o día, y ajusta la hora a tu país.</div>
+    <div class="brand"><h1>Calendario MBAO 2028</h1></div>
+    <div class="nav-btns" id="actionBtns">
+      <button id="btnReload" class="today-btn" title="Vuelve a leer la hoja de Google Sheets">&#x21bb; Actualizar datos</button>
+      <button id="btnTasks" class="today-btn" title="Muestra únicamente entregables / tareas">&#9745; Solo entregables</button>
+      <button id="btnExams" class="today-btn" title="Muestra únicamente exámenes">&#9998; Solo exámenes</button>
+      <button id="btnClear" class="today-btn" title="Restablece materia, profesor, día, mes, semana, entregables y exámenes">&#10005; Limpiar filtros</button>
     </div>
-    <div class="range-badge"><b>Periodo</b>May → Dic 2026</div>
   </header>
   <div class="controls">
     <div class="ctl"><label>Mes</label><select id="fMes"></select></div>
@@ -139,14 +143,10 @@ select:disabled{opacity:.5;cursor:not-allowed}
         <option value="0">Domingo</option>
       </select>
     </div>
-    <div class="ctl"><label>Zona horaria (país)</label>
+    <div class="ctl"><label>Zona horaria</label>
       <select id="fTz">
-        <option value="-6" selected>Costa Rica (UTC&minus;6) · base</option>
-        <option value="-6">Centroamérica · Guatemala, El Salvador, Honduras, Nicaragua (UTC&minus;6)</option>
-        <option value="-5">Panamá (UTC&minus;5)</option>
-        <option value="-5">Perú (UTC&minus;5)</option>
-        <option value="-5">Colombia (UTC&minus;5)</option>
-        <option value="-5">Ecuador (UTC&minus;5)</option>
+        <option value="-6" selected>Centroamérica (UTC&minus;6)</option>
+        <option value="-5">Sudamérica (UTC&minus;5)</option>
       </select>
     </div>
     <div class="ctl"><label class="toggle"><input type="checkbox" id="fWeekend"> Solo fines de semana</label></div>
@@ -154,12 +154,6 @@ select:disabled{opacity:.5;cursor:not-allowed}
   <div class="tzline" id="tzLine"></div>
   <div class="navbar">
     <div class="title" id="periodTitle"></div>
-    <div class="nav-btns" style="margin-right:auto">
-      <button id="btnReload" class="today-btn" title="Vuelve a leer la hoja de Google Sheets">&#x21bb; Actualizar datos</button>
-      <button id="btnTasks" class="today-btn" title="Muestra únicamente entregables / tareas">&#9745; Solo entregables</button>
-      <button id="btnExams" class="today-btn" title="Muestra únicamente exámenes">&#9998; Solo exámenes</button>
-      <button id="btnClear" class="today-btn" title="Restablece materia, profesor, día, mes, semana, entregables y exámenes">&#10005; Limpiar filtros</button>
-    </div>
     <div class="seg view-toggle">
       <button data-view="month" class="active">Agrupar por mes</button>
       <button data-view="week">Agrupar por semana</button>
@@ -433,6 +427,47 @@ function evHTML(e){
     (meta.length?'<span class="meta">'+meta.join(" \u00b7 ")+'</span>':'')+
     '</div>';
 }
+/* Caja agrupada de entregables (misma asignatura + profesor en el día) */
+function groupTaskHTML(items){
+  const c=SUBJ[items[0].subj].color, prof=items[0].prof, diff=state.tz-BASE_TZ;
+  let anyCross=false;
+  const lis=items.map(e=>{
+    const endConv=(e.dispEnd!=null?e.dispEnd:e.dispMin);
+    const endCR=(e.end!=null?e.end:e.min);
+    const crosses=endConv>=1440||endConv<0;
+    if(crosses)anyCross=true;
+    const showMin=crosses?endCR:endConv;
+    const t=fmtTime(showMin)+(crosses?' <span class="xday">(hora CR)</span>':'');
+    return '<li><span class="gt">'+t+'</span>'+(e.label||'(sin t\u00edtulo)')+'</li>';
+  }).join("");
+  let meta=[];
+  if(prof!=="\u2014")meta.push('<b>Prof.</b> '+prof);
+  if(anyCross&&diff>0)meta.push('<b class="xday">Por husos horarios</b> tienes '+diff+' hora'+(diff===1?'':'s')+' m\u00e1s para finalizar estas tareas.');
+  return '<div class="ev evgroup" style="--cc:'+c+'" title="'+SUBJ[items[0].subj].name+'">'+
+    '<span class="t">Entregas \u00b7 '+items.length+'</span>'+
+    '<span class="n">'+SUBJ[items[0].subj].name+'</span>'+
+    '<ul class="glist">'+lis+'</ul>'+
+    (meta.length?'<span class="meta">'+meta.join(" \u00b7 ")+'</span>':'')+
+    '</div>';
+}
+/* Arma los eventos de un día: agrupa entregables por asignatura+profesor; el resto normal */
+function renderDayEvents(evs){
+  const groups={}, units=[];
+  evs.forEach(e=>{
+    if(isTask(e)){
+      const key=e.subj+"|"+(e.prof||"");
+      (groups[key]=groups[key]||[]).push(e);
+    }else{
+      units.push({min:e.dispMin, html:evHTML(e)});
+    }
+  });
+  Object.keys(groups).forEach(k=>{
+    const items=groups[k].slice().sort((a,b)=>a.dispMin-b.dispMin);
+    units.push({min:items[0].dispMin, html: items.length>1?groupTaskHTML(items):evHTML(items[0])});
+  });
+  units.sort((a,b)=>a.min-b.min);
+  return units.map(u=>u.html).join("");
+}
 /* Celda de un día dentro de la rejilla de 7 columnas */
 const WEEKHEAD='<div class="weekhead">'+["Lun","Mar","Mi\u00e9","Jue","Vie","S\u00e1b","Dom"].map(d=>'<span>'+d+'</span>').join("")+'</div>';
 function dayCellHTML(dt, restrictMonth){
@@ -447,7 +482,7 @@ function dayCellHTML(dt, restrictMonth){
   if(!evs.length)cls.push("noev");
   return {html:'<div class="'+cls.join(' ')+'" data-date="'+dk+'">'+
     '<div class="dch"><span class="dcn">'+dt.getDate()+'</span><span class="dcsub">'+DOWS[dow]+' \u00b7 '+MONTHS[dt.getMonth()].slice(0,3)+'</span></div>'+
-    evs.map(evHTML).join("")+
+    renderDayEvents(evs)+
     '</div>', count:evs.length};
 }
 /* Fila de una semana: 7 columnas Lun..Dom */
@@ -533,7 +568,7 @@ function render(){
   if(state.view==="month")renderMonth();else renderWeek();
   renderLegend();
   const diff=state.tz-BASE_TZ;
-  document.getElementById("tzLine").innerHTML=diff===0?('Mostrando horas en <b>'+state.tzLabel+'</b> \u2014 coinciden con la hora base de Costa Rica.'):('Mostrando horas en <b>'+state.tzLabel+'</b> \u2014 '+(diff>0?'+':'')+diff+' h respecto a Costa Rica.');
+  document.getElementById("tzLine").innerHTML=diff===0?('Mostrando horas en <b>'+state.tzLabel+'</b> \u2014 hora base del calendario.'):('Mostrando horas en <b>'+state.tzLabel+'</b> \u2014 '+(diff>0?'+':'')+diff+' h respecto a la hora base (Centroam\u00e9rica, UTC\u22126).');
 }
 // Posiciona el área de eventos en "hoy": deja lo anterior arriba (scroll up) y lo futuro abajo
 function scrollToToday(){

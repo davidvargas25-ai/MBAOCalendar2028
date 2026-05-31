@@ -41,7 +41,7 @@ body{margin:0;background:
   color:var(--on-dark);font-family:'Archivo',sans-serif;line-height:1.45;-webkit-font-smoothing:antialiased;overflow:hidden}
 html,body{height:100%}
 .wrap{max-width:1320px;margin:0 auto;height:100vh;height:100dvh;display:flex;flex-direction:column;padding:12px 16px}
-.topbar{flex:0 0 auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:10px;box-shadow:0 10px 26px -14px rgba(0,0,0,.5)}
+.topbar{flex:0 0 auto;position:relative;z-index:10;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:10px;box-shadow:0 10px 26px -14px rgba(0,0,0,.5)}
 header.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:8px}
 .brand .kicker{font-size:.62rem;letter-spacing:.26em;text-transform:uppercase;color:var(--accent);font-weight:700}
 .brand h1{font-family:'Fraunces',serif;font-weight:700;font-size:1.05rem;line-height:1;margin:0;color:var(--ink)}
@@ -65,6 +65,20 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .navbar .title{font-size:.84rem;color:var(--ink-soft);font-weight:500}
 .navbar .title b{font-family:'Fraunces',serif;color:var(--ink);font-weight:600;font-style:italic}
 #calArea{flex:1 1 auto;min-height:0;overflow-y:auto;position:relative;padding:2px 2px 12px}
+.statusline{display:flex;gap:14px;align-items:baseline;margin-top:6px;flex-wrap:wrap}
+.statusline .title{font-size:.8rem;color:var(--ink-soft);font-weight:500}
+.statusline .title b{font-family:'Fraunces',serif;color:var(--ink);font-weight:600;font-style:italic}
+.statusline .tzline{margin-top:0}
+.ms{position:relative}
+.ms-btn{width:100%;text-align:left;padding:6px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);font-size:.82rem;font-family:'Archivo',sans-serif;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ms-btn:hover{border-color:var(--accent)}
+.ms-btn.on{border-color:var(--accent);color:var(--accent2);font-weight:600}
+.ms-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;min-width:200px;max-height:280px;overflow-y:auto;background:#fff;border:1px solid var(--line);border-radius:9px;box-shadow:0 14px 30px -10px rgba(0,0,0,.45);z-index:50;padding:4px}
+.ms.open .ms-panel{display:block}
+.ms-opt{display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:6px;font-size:.82rem;color:var(--ink);cursor:pointer;white-space:normal}
+.ms-opt:hover{background:var(--paper2)}
+.ms-opt input{width:15px;height:15px;accent-color:var(--accent);flex:0 0 auto}
+.ms-empty{padding:6px;color:var(--ink-soft);font-size:.78rem}
 /* Bloques (mes / semana) */
 .section{margin-top:18px}
 .section:first-child{margin-top:2px}
@@ -126,42 +140,30 @@ select:disabled{opacity:.5;cursor:not-allowed}
       <button id="btnReload" class="today-btn" title="Vuelve a leer la hoja de Google Sheets">&#x21bb; Actualizar datos</button>
       <button id="btnTasks" class="today-btn" title="Muestra únicamente entregables / tareas">&#9745; Solo entregables</button>
       <button id="btnExams" class="today-btn" title="Muestra únicamente exámenes">&#9998; Solo exámenes</button>
-      <button id="btnClear" class="today-btn" title="Restablece materia, profesor, día, mes, semana, entregables y exámenes">&#10005; Limpiar filtros</button>
+      <button id="btnWeekend" class="today-btn" title="Muestra únicamente sábados y domingos">&#9728; Solo fin de semana</button>
+      <button id="btnClear" class="today-btn" title="Restablece todos los filtros">&#10005; Limpiar filtros</button>
+    </div>
+    <div class="seg view-toggle">
+      <button data-view="month" class="active">Mes</button>
+      <button data-view="week">Semana</button>
     </div>
   </header>
   <div class="controls">
-    <div class="ctl"><label>Mes</label><select id="fMes"></select></div>
-    <div class="ctl"><label>Semana</label><select id="fSemana"></select></div>
-    <div class="ctl"><label>Asignatura / Materia</label><select id="fMateria"></select></div>
-    <div class="ctl"><label>Profesor</label><select id="fProf"></select></div>
-    <div class="ctl"><label>Día de la semana</label>
-      <select id="fDay">
-        <option value="all">Todos los días</option>
-        <option value="1">Lunes</option><option value="2">Martes</option>
-        <option value="3">Miércoles</option><option value="4">Jueves</option>
-        <option value="5">Viernes</option><option value="6">Sábado</option>
-        <option value="0">Domingo</option>
-      </select>
-    </div>
+    <div class="ctl"><label>Mes</label><div class="ms" id="msMes"><button type="button" class="ms-btn" data-ph="Todos los meses">Todos los meses</button><div class="ms-panel"></div></div></div>
+    <div class="ctl"><label>Semana</label><div class="ms" id="msSemana"><button type="button" class="ms-btn" data-ph="Todas las semanas">Todas las semanas</button><div class="ms-panel"></div></div></div>
+    <div class="ctl"><label>Asignatura</label><div class="ms" id="msMateria"><button type="button" class="ms-btn" data-ph="Todas las asignaturas">Todas las asignaturas</button><div class="ms-panel"></div></div></div>
+    <div class="ctl"><label>Profesor</label><div class="ms" id="msProf"><button type="button" class="ms-btn" data-ph="Todos los profesores">Todos los profesores</button><div class="ms-panel"></div></div></div>
+    <div class="ctl"><label>Día de la semana</label><div class="ms" id="msDay"><button type="button" class="ms-btn" data-ph="Todos los días">Todos los días</button><div class="ms-panel"></div></div></div>
     <div class="ctl"><label>Zona horaria</label>
       <select id="fTz">
         <option value="-6" selected>Centroamérica (UTC&minus;6)</option>
         <option value="-5">Sudamérica (UTC&minus;5)</option>
       </select>
     </div>
-    <div class="ctl"><label class="toggle"><input type="checkbox" id="fWeekend"> Solo fines de semana</label></div>
   </div>
-  <div class="tzline" id="tzLine"></div>
-  <div class="navbar">
-    <div class="title" id="periodTitle"></div>
-    <div class="seg view-toggle">
-      <button data-view="month" class="active">Agrupar por mes</button>
-      <button data-view="week">Agrupar por semana</button>
-    </div>
-  </div>
+  <div class="statusline"><span class="title" id="periodTitle"></span><span class="tzline" id="tzLine"></span></div>
   </div><!-- /topbar -->
   <div id="calArea"></div>
-  <div class="legend"><h3>Asignaturas en este periodo</h3><div class="chips" id="legendChips"></div></div>
 </div>
 <script>
 const SUBJ = {
@@ -276,15 +278,16 @@ const BASE_TZ=-6;
 const MONTHS=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const DOWS=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 const DOWL=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
-const state={view:"month", cur:new Date(2026,4,1), weekStart:startOfWeek(new Date(2026,4,4)),
-  materia:"all", prof:"all", day:"all", month:"all", week:"all", tz:-6, weekend:false, task:false, exam:false, tzLabel:"Costa Rica (UTC\u22126)"};
+const state={view:"month", tz:-6, weekend:false, task:false, exam:false, tzLabel:"Centroam\u00e9rica (UTC\u22126)",
+  materias:new Set(), profs:new Set(), days:new Set(), months:new Set(), weeks:new Set()};
 // ===== Memoria de filtros: recuerda lo seleccionado al recargar =====
 const STORE_KEY="mbao2028_filtros";
 function saveState(){
   try{localStorage.setItem(STORE_KEY,JSON.stringify({
-    view:state.view, materia:state.materia, prof:state.prof, day:state.day,
-    month:state.month, week:state.week, weekend:state.weekend, task:state.task, exam:state.exam,
-    tzIdx:document.getElementById("fTz").selectedIndex
+    view:state.view, weekend:state.weekend, task:state.task, exam:state.exam,
+    tzIdx:document.getElementById("fTz").selectedIndex,
+    materias:[...state.materias], profs:[...state.profs], days:[...state.days],
+    months:[...state.months], weeks:[...state.weeks]
   }));}catch(e){}
 }
 function loadState(){
@@ -292,38 +295,34 @@ function loadState(){
     const s=JSON.parse(localStorage.getItem(STORE_KEY)||"null");
     if(!s)return;
     if(s.view)state.view=s.view;
-    if(s.materia)state.materia=s.materia;
-    if(s.prof)state.prof=s.prof;
-    if(s.day)state.day=s.day;
-    if(s.month)state.month=s.month;
-    if(s.week)state.week=s.week;
     if(typeof s.weekend==="boolean")state.weekend=s.weekend;
     if(typeof s.task==="boolean")state.task=s.task;
     if(typeof s.exam==="boolean")state.exam=s.exam;
     if(s.tzIdx!=null)state._tzIdx=s.tzIdx;
+    if(Array.isArray(s.materias))state.materias=new Set(s.materias);
+    if(Array.isArray(s.profs))state.profs=new Set(s.profs);
+    if(Array.isArray(s.days))state.days=new Set(s.days);
+    if(Array.isArray(s.months))state.months=new Set(s.months);
+    if(Array.isArray(s.weeks))state.weeks=new Set(s.weeks);
   }catch(e){}
 }
-// Selecciona un valor en un <select>; si la opción ya no existe, cae en "all"
-function setSel(el,val){ el.value=val; if(el.value!==val){el.value="all";return "all";} return val; }
-// Reaplica el estado a los controles del DOM (tras reconstruir las opciones)
+// Refleja el estado en botones de filtro (entregables, exámenes, fin de semana)
+function syncFilterBtns(){
+  [["btnTasks","task"],["btnExams","exam"],["btnWeekend","weekend"]].forEach(([id,key])=>{
+    const b=document.getElementById(id);if(b)b.classList.toggle("active",!!state[key]);
+  });
+}
+// Reaplica el estado a todos los controles
 function applyStateToControls(){
   const g=id=>document.getElementById(id);
   document.querySelectorAll(".seg.view-toggle button").forEach(b=>b.classList.toggle("active",b.dataset.view===state.view));
-  state.materia=setSel(fMateria,state.materia);
-  state.prof=setSel(fProf,state.prof);
-  state.day=setSel(g("fDay"),state.day);
-  state.month=setSel(fMes,state.month);
   if(state._tzIdx!=null && g("fTz").options[state._tzIdx]){
     g("fTz").selectedIndex=state._tzIdx;
     state.tz=Number(g("fTz").value);
     state.tzLabel=g("fTz").options[g("fTz").selectedIndex].text.replace(/ \u00b7.*/,'').trim();
   }
-  g("fWeekend").checked=state.weekend;
-  const bt=g("btnTasks");if(bt)bt.classList.toggle("active",!!state.task);
-  const bx=g("btnExams");if(bx)bx.classList.toggle("active",!!state.exam);
-  g("fDay").disabled=state.weekend;
-  populateWeeks();
-  state.week=setSel(g("fSemana"),state.week);
+  syncFilterBtns();
+  rebuildAllMultis();
 }
 function startOfWeek(dt){const x=new Date(dt);x.setHours(0,0,0,0);const day=x.getDay();x.setDate(x.getDate()+(day===0?-6:1-day));return x;}
 function pad(n){return String(n).padStart(2,"0");}
@@ -331,42 +330,45 @@ function keyOf(dt){return dt.getFullYear()+"-"+pad(dt.getMonth()+1)+"-"+pad(dt.g
 function shiftMin(min, tz){return min + (tz - BASE_TZ)*60;}
 function fmtTime(min){let t=((min%1440)+1440)%1440;let h=Math.floor(t/60),m=t%60;const ap=h>=12?"pm":"am";let hh=h%12;if(hh===0)hh=12;return m===0?(hh+ap):(hh+":"+pad(m)+ap);}
 
-const fMateria=document.getElementById("fMateria");
-const fProf=document.getElementById("fProf");
-const fMes=document.getElementById("fMes");
-// Rellena los desplegables a partir de los datos ya cargados (se llama dentro de loadData)
+// ===== Selección múltiple (desplegables compactos con checkboxes) =====
+const MULTI=[{id:"msMes",set:"months"},{id:"msSemana",set:"weeks"},{id:"msMateria",set:"materias"},{id:"msProf",set:"profs"},{id:"msDay",set:"days"}];
+let OPTS={};
+function escAttr(s){return String(s).replace(/"/g,"&quot;");}
+function fmtWeekLabel(mon,sun){
+  return mon.getDate()+" "+MONTHS[mon.getMonth()].slice(0,3)+" \u2013 "+sun.getDate()+" "+MONTHS[sun.getMonth()].slice(0,3);
+}
+function updateMultiBtn(id){
+  const ms=document.getElementById(id);if(!ms)return;
+  const set=state[MULTI.find(c=>c.id===id).set];
+  const btn=ms.querySelector(".ms-btn"),ph=btn.dataset.ph;
+  if(set.size===0){btn.textContent=ph;btn.classList.remove("on");}
+  else{btn.classList.add("on");
+    if(set.size===1){const v=[...set][0];const o=(OPTS[id]||[]).find(o=>o.value===v);btn.textContent=o?o.label:"1 seleccionado";}
+    else btn.textContent=set.size+" seleccionados";}
+}
+function buildMulti(id){
+  const ms=document.getElementById(id);if(!ms)return;
+  const set=state[MULTI.find(c=>c.id===id).set];
+  const opts=OPTS[id]||[];
+  const panel=ms.querySelector(".ms-panel");
+  panel.innerHTML=opts.length?opts.map(o=>'<label class="ms-opt"><input type="checkbox" value="'+escAttr(o.value)+'"'+(set.has(o.value)?" checked":"")+'><span>'+o.label+'</span></label>').join(""):'<div class="ms-empty">Sin opciones</div>';
+  panel.querySelectorAll("input").forEach(cb=>{
+    cb.onchange=()=>{ if(cb.checked)set.add(cb.value); else set.delete(cb.value); updateMultiBtn(id); saveState(); render(); };
+  });
+  updateMultiBtn(id);
+}
+function rebuildAllMultis(){MULTI.forEach(c=>buildMulti(c.id));}
+// Calcula las opciones de cada filtro a partir de los datos cargados
 function initFilters(){
   const usedSubj=new Set(EVENTS.map(e=>e.subj));
-  fMateria.innerHTML='<option value="all">Todas las asignaturas</option>'+
-    Object.entries(SUBJ).filter(([k])=>usedSubj.has(k)).map(([k,v])=>'<option value="'+k+'">'+v.name+'</option>').join("");
-  const profs=[...new Set(EVENTS.map(e=>e.prof))].filter(p=>p&&p!=="\u2014").sort((a,b)=>a.localeCompare(b,'es'));
-  fProf.innerHTML='<option value="all">Todos los profesores</option>'+profs.map(p=>'<option value="'+p+'">'+p+'</option>').join("");
-  const monthKeys=[...new Set(EVENTS.map(e=>e.y+"-"+pad(e.m+1)))].sort();
-  fMes.innerHTML='<option value="all">Todos los meses</option>'+
-    monthKeys.map(k=>{const [y,m]=k.split("-");return '<option value="'+k+'">'+MONTHS[Number(m)-1]+' '+y+'</option>';}).join("");
-  populateWeeks();
-}
-
-const fSemana=document.getElementById("fSemana");
-function fmtWeekLabel(mon,sun){
-  return mon.getDate()+" de "+MONTHS[mon.getMonth()].toLowerCase()+" \u2013 "+sun.getDate()+" de "+MONTHS[sun.getMonth()].toLowerCase();
-}
-function populateWeeks(){
-  if(state.month==="all"){
-    fSemana.innerHTML='<option value="all">Elige un mes primero</option>';
-    fSemana.disabled=true; state.week="all"; return;
-  }
-  fSemana.disabled=false;
-  const [y,m]=state.month.split("-").map(Number);
-  const firstDay=new Date(y,m-1,1), lastDay=new Date(y,m,0);
-  let cur=startOfWeek(firstDay);
-  let opts='<option value="all">Todas las semanas</option>';
-  while(cur<=lastDay){
-    const mon=new Date(cur), sun=new Date(cur);sun.setDate(sun.getDate()+6);
-    opts+='<option value="'+keyOf(mon)+'">'+fmtWeekLabel(mon,sun)+'</option>';
-    cur.setDate(cur.getDate()+7);
-  }
-  fSemana.innerHTML=opts;
+  OPTS.msMateria=Object.entries(SUBJ).filter(([k])=>usedSubj.has(k)).map(([k,v])=>({value:k,label:v.name}));
+  OPTS.msProf=[...new Set(EVENTS.map(e=>e.prof))].filter(p=>p&&p!=="\u2014").sort((a,b)=>a.localeCompare(b,'es')).map(p=>({value:p,label:p}));
+  OPTS.msMes=[...new Set(EVENTS.map(e=>e.y+"-"+pad(e.m+1)))].sort().map(k=>{const [y,m]=k.split("-");return {value:k,label:MONTHS[Number(m)-1]+' '+y};});
+  OPTS.msSemana=[];
+  const [min,max]=datasetBounds();
+  if(min){let cur=startOfWeek(min);while(cur<=max){const mon=new Date(cur),sun=new Date(cur);sun.setDate(sun.getDate()+6);OPTS.msSemana.push({value:keyOf(mon),label:fmtWeekLabel(mon,sun)});cur.setDate(cur.getDate()+7);}}
+  OPTS.msDay=[{value:"1",label:"Lunes"},{value:"2",label:"Martes"},{value:"3",label:"Mi\u00e9rcoles"},{value:"4",label:"Jueves"},{value:"5",label:"Viernes"},{value:"6",label:"S\u00e1bado"},{value:"0",label:"Domingo"}];
+  rebuildAllMultis();
 }
 
 // Una fila es entregable/tarea si su columna Tipo contiene "entreg" o "tarea"
@@ -375,15 +377,13 @@ function isExam(e){return (e.tipo||"").trim().toLowerCase()==="examen";}
 function passFilters(e, dt){
   if(state.task && !isTask(e)) return false;
   if(state.exam && !isExam(e)) return false;
-  if(state.week!=="all"){
-    const ms=new Date(state.week+"T00:00:00"), me=new Date(ms);me.setDate(me.getDate()+6);
-    if(dt<ms||dt>me) return false;
-  } else if(state.month!=="all" && (dt.getFullYear()+"-"+pad(dt.getMonth()+1))!==state.month) return false;
-  if(state.materia!=="all" && e.subj!==state.materia) return false;
-  if(state.prof!=="all" && e.prof!==state.prof) return false;
+  if(state.months.size && !state.months.has(dt.getFullYear()+"-"+pad(dt.getMonth()+1))) return false;
+  if(state.weeks.size && !state.weeks.has(keyOf(startOfWeek(dt)))) return false;
+  if(state.materias.size && !state.materias.has(e.subj)) return false;
+  if(state.profs.size && !state.profs.has(e.prof)) return false;
   const dow=dt.getDay();
   if(state.weekend && !(dow===0||dow===6)) return false;
-  if(state.day!=="all" && dow!==Number(state.day)) return false;
+  if(state.days.size && !state.days.has(String(dow))) return false;
   return true;
 }
 function eventsByDay(dateKey){
@@ -554,21 +554,11 @@ function renderWeek(){
   periodTitle.innerHTML=html?('<b>'+blocks+'</b> '+(blocks===1?'semana':'semanas')+' \u00b7 <b>'+totalEv+'</b> sesiones'):'';
   calArea.innerHTML=html||'<div class="empty-msg">No hay eventos que coincidan con los filtros.</div>';
 }
-function renderLegend(){
-  const counts={};
-  EVENTS.forEach(e=>{const dt=new Date(e.y,e.m,e.d);if(passFilters(e,dt))counts[e.subj]=(counts[e.subj]||0)+1;});
-  const chips=Object.entries(SUBJ).filter(([k])=>counts[k]).map(([k,v])=>{
-    const profTxt=v.prof!=="\u2014"?' \u00b7 <span class="prof">'+v.prof+'</span>':'';
-    return '<span class="chip"><span class="dot" style="background:'+v.color+'"></span>'+v.name+profTxt+' <span class="cnt">'+counts[k]+'</span></span>';
-  }).join("");
-  document.getElementById("legendChips").innerHTML=chips||'<span class="chip">Sin coincidencias</span>';
-}
 function render(){
   if(!EVENTS.length){return;}
   if(state.view==="month")renderMonth();else renderWeek();
-  renderLegend();
   const diff=state.tz-BASE_TZ;
-  document.getElementById("tzLine").innerHTML=diff===0?('Mostrando horas en <b>'+state.tzLabel+'</b> \u2014 hora base del calendario.'):('Mostrando horas en <b>'+state.tzLabel+'</b> \u2014 '+(diff>0?'+':'')+diff+' h respecto a la hora base (Centroam\u00e9rica, UTC\u22126).');
+  document.getElementById("tzLine").innerHTML=diff===0?('Horas en <b>'+state.tzLabel+'</b> \u2014 hora base.'):('Horas en <b>'+state.tzLabel+'</b> \u2014 '+(diff>0?'+':'')+diff+' h respecto a la base (Centroam\u00e9rica, UTC\u22126).');
 }
 // Posiciona el área de eventos en "hoy": deja lo anterior arriba (scroll up) y lo futuro abajo
 function scrollToToday(){
@@ -588,23 +578,22 @@ function scrollToToday(){
   ca.scrollTop += (tRect.top - caRect.top) - off - 6;
 }
 document.querySelectorAll(".seg.view-toggle button").forEach(b=>{b.onclick=()=>{document.querySelectorAll(".seg.view-toggle button").forEach(x=>x.classList.remove("active"));b.classList.add("active");state.view=b.dataset.view;saveState();render();};});
-fMateria.onchange=e=>{state.materia=e.target.value;saveState();render();};
-document.getElementById("fMes").onchange=e=>{state.month=e.target.value;state.week="all";populateWeeks();document.getElementById("fSemana").value="all";saveState();render();};
-document.getElementById("fSemana").onchange=e=>{state.week=e.target.value;saveState();render();};
-fProf.onchange=e=>{state.prof=e.target.value;saveState();render();};
-document.getElementById("fDay").onchange=e=>{state.day=e.target.value;saveState();render();};
-document.getElementById("fWeekend").onchange=e=>{state.weekend=e.target.checked;document.getElementById("fDay").disabled=e.target.checked;if(e.target.checked){document.getElementById("fDay").value="all";state.day="all";}saveState();render();};
 document.getElementById("fTz").onchange=e=>{state.tz=Number(e.target.value);state.tzLabel=e.target.options[e.target.selectedIndex].text.replace(/ \u00b7.*/,'').trim();saveState();render();};
+// Abrir/cerrar desplegables de selección múltiple
+document.querySelectorAll(".ms-btn").forEach(b=>{b.onclick=ev=>{ev.stopPropagation();const ms=b.closest(".ms");const open=ms.classList.contains("open");document.querySelectorAll(".ms.open").forEach(o=>o.classList.remove("open"));if(!open)ms.classList.add("open");};});
+document.addEventListener("click",ev=>{document.querySelectorAll(".ms.open").forEach(ms=>{if(!ms.contains(ev.target))ms.classList.remove("open");});});
 const _btn=document.getElementById("btnReload");if(_btn)_btn.onclick=()=>loadData();
-function syncFilterBtns(){const t=document.getElementById("btnTasks"),x=document.getElementById("btnExams");if(t)t.classList.toggle("active",state.task);if(x)x.classList.toggle("active",state.exam);}
 function toggleTasks(){state.task=!state.task;if(state.task)state.exam=false;syncFilterBtns();saveState();render();}
 function toggleExams(){state.exam=!state.exam;if(state.exam)state.task=false;syncFilterBtns();saveState();render();}
+function toggleWeekend(){state.weekend=!state.weekend;if(state.weekend)state.days.clear();syncFilterBtns();rebuildAllMultis();saveState();render();}
 function clearFilters(){
-  state.materia="all";state.prof="all";state.day="all";state.month="all";state.week="all";state.weekend=false;state.task=false;state.exam=false;
+  state.materias.clear();state.profs.clear();state.days.clear();state.months.clear();state.weeks.clear();
+  state.weekend=false;state.task=false;state.exam=false;
   applyStateToControls();saveState();render();requestAnimationFrame(scrollToToday);
 }
 const _bt=document.getElementById("btnTasks");if(_bt)_bt.onclick=toggleTasks;
 const _bx=document.getElementById("btnExams");if(_bx)_bx.onclick=toggleExams;
+const _bw=document.getElementById("btnWeekend");if(_bw)_bw.onclick=toggleWeekend;
 const _bc=document.getElementById("btnClear");if(_bc)_bc.onclick=clearFilters;
 loadState();
 loadData();

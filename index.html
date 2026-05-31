@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>A-MBA Online 2028 · Calendario Interactivo</title>
+<title>Slot Nanny MBAO 2028</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,900&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -49,7 +49,7 @@ header.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-
 .range-badge{font-family:'Fraunces',serif;font-style:italic;font-size:.9rem;color:var(--ink-soft);text-align:right}
 .range-badge b{display:block;font-style:normal;font-weight:600;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);margin-bottom:1px}
 .controls{margin-top:10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 12px;background:var(--paper2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
-.ctl label{display:block;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-soft);margin-bottom:3px}
+.ctl > label{display:block;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-soft);margin-bottom:3px}
 select{width:100%;padding:6px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);font-size:.82rem;cursor:pointer;font-family:'Archivo',sans-serif}
 select:focus{outline:2px solid var(--accent);outline-offset:1px}
 select:disabled{opacity:.5;cursor:not-allowed}
@@ -65,17 +65,16 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .navbar .title{font-size:.84rem;color:var(--ink-soft);font-weight:500}
 .navbar .title b{font-family:'Fraunces',serif;color:var(--ink);font-weight:600;font-style:italic}
 #calArea{flex:1 1 auto;min-height:0;overflow-y:auto;position:relative;padding:2px 2px 12px}
-.statusline{display:flex;gap:14px;align-items:baseline;margin-top:6px;flex-wrap:wrap}
-.statusline .title{font-size:.8rem;color:var(--ink-soft);font-weight:500}
-.statusline .title b{font-family:'Fraunces',serif;color:var(--ink);font-weight:600;font-style:italic}
-.statusline .tzline{margin-top:0}
+.statusline{display:block;margin-top:8px}
+.statusline .desc{font-size:.78rem;color:var(--ink-soft);line-height:1.45;display:block}
+.brand .tzline{margin-top:4px;font-size:.72rem}
 .ms{position:relative}
 .ms-btn{width:100%;text-align:left;padding:6px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);font-size:.82rem;font-family:'Archivo',sans-serif;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ms-btn:hover{border-color:var(--accent)}
 .ms-btn.on{border-color:var(--accent);color:var(--accent2);font-weight:600}
 .ms-panel{display:none;position:absolute;top:calc(100% + 3px);left:0;right:0;min-width:175px;max-height:300px;overflow-y:auto;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 14px 30px -10px rgba(0,0,0,.45);z-index:50;padding:3px}
 .ms.open .ms-panel{display:block}
-.ms-opt{display:flex;align-items:center;gap:6px;padding:2px 6px;border-radius:4px;font-size:.78rem;line-height:1.25;color:var(--ink);cursor:pointer;white-space:normal;text-transform:none;letter-spacing:normal;font-weight:400}
+.ms-opt{display:flex;align-items:center;gap:6px;padding:1px 7px;border-radius:4px;font-size:.78rem;line-height:1.15;color:var(--ink);cursor:pointer;white-space:normal;text-transform:none;letter-spacing:normal;font-weight:400}
 .ms-opt:hover{background:var(--paper2)}
 .ms-opt input{width:13px;height:13px;accent-color:var(--accent);flex:0 0 auto}
 .ms-all{font-weight:700;border-bottom:1px solid var(--line);margin-bottom:2px;padding-bottom:3px;position:sticky;top:-3px;background:#fff}
@@ -141,7 +140,7 @@ select:disabled{opacity:.5;cursor:not-allowed}
 <div class="wrap">
   <div class="topbar">
   <header class="top">
-    <div class="brand"><h1>Calendario MBAO 2028</h1></div>
+    <div class="brand"><h1>Slot Nanny MBAO 2028</h1><div class="tzline" id="tzLine"></div></div>
     <div class="nav-btns" id="actionBtns">
       <button id="btnReload" class="today-btn" title="Vuelve a leer la hoja de Google Sheets">&#x21bb; Actualizar datos</button>
       <button id="btnTasks" class="today-btn" title="Muestra únicamente entregables / tareas">&#9745; Solo entregables</button>
@@ -167,7 +166,7 @@ select:disabled{opacity:.5;cursor:not-allowed}
       </select>
     </div>
   </div>
-  <div class="statusline"><span class="title" id="periodTitle"></span><span class="tzline" id="tzLine"></span></div>
+  <div class="statusline"><span class="desc">Slot Nanny MBA te ayuda a visualizar tus horarios de clase y entregables antes de que el MBA se convierta en tu ruta a la demencia. Centraliza clases, fechas y entregables para que sepas cuándo debes aparecer, qué debes preparar y cuántas horas de sueño vas a perder. No se trata de entrar Cavas 100 veces al día. Se trata de dejar de descubrir las tareas cuando ya es demasiado tarde. Menos confusión. Más control. Mejor MBA</span></div>
   </div><!-- /topbar -->
   <div id="calArea"></div>
 </div>
@@ -415,7 +414,6 @@ function eventsByDay(dateKey){
 }
 const calArea=document.getElementById("calArea");
 calArea.addEventListener("change",ev=>{const t=ev.target;if(t&&t.classList&&t.classList.contains("taskdone")){toggleDone(decodeURIComponent(t.dataset.id),t.checked);}});
-const periodTitle=document.getElementById("periodTitle");
 function tip(e){let s=SUBJ[e.subj].name;if(e.prof!=="\u2014")s+=" \u00b7 "+e.prof;if(e.ses)s+=" \u00b7 Sesi\u00f3n "+e.ses;return s.replace(/"/g,"&quot;");}
 function timeRange(e){const a=fmtTime(e.dispMin);if(e.dispEnd!=null&&e.dispEnd!==e.dispMin)return a+" \u2013 "+fmtTime(e.dispEnd);return a;}
 function evHTML(e){
@@ -549,7 +547,6 @@ function renderMonth(){
     }
     m++;if(m>11){m=0;y++;}
   }
-  periodTitle.innerHTML=html?('<b>'+blocks+'</b> '+(blocks===1?'mes':'meses')+' \u00b7 <b>'+totalEv+'</b> sesiones'):'';
   calArea.innerHTML=html||'<div class="empty-msg">No hay eventos que coincidan con los filtros.</div>';
 }
 
@@ -574,7 +571,6 @@ function renderWeek(){
     }
     cur.setDate(cur.getDate()+7);
   }
-  periodTitle.innerHTML=html?('<b>'+blocks+'</b> '+(blocks===1?'semana':'semanas')+' \u00b7 <b>'+totalEv+'</b> sesiones'):'';
   calArea.innerHTML=html||'<div class="empty-msg">No hay eventos que coincidan con los filtros.</div>';
 }
 function render(){

@@ -95,6 +95,7 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .ev .meta b{color:var(--ink);font-weight:600}
 .ev .xday{color:var(--accent);font-weight:700}
 .ev .meta .xday{color:var(--accent)}
+.ev .ti{color:var(--ink);font-weight:500;font-size:.82rem;line-height:1.3;overflow-wrap:anywhere;white-space:normal}
 .empty-msg{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--ink-soft);font-style:italic;font-family:'Fraunces',serif}
 .legend{flex:0 0 auto;margin-top:8px;border-top:1px solid var(--line);padding-top:8px;max-height:82px;overflow-y:auto}
 .legend h3{font-family:'Fraunces',serif;font-weight:600;font-size:.82rem;margin:0 0 6px}
@@ -259,11 +260,17 @@ async function loadData(){
     requestAnimationFrame(scrollToToday);
   }catch(err){
     EVENTS=[];
+    const msg=(err&&err.message)?err.message:String(err);
+    const isHttp=/HTTP\s+\d/.test(msg);
+    const cuerpo = isHttp
+      ? '<b>La hoja de Google Sheets respondi&oacute; con un error ('+msg+').</b><br><br>'+
+        'Esto suele pasar cuando la hoja se reimport&oacute; o cambi&oacute; de pesta&ntilde;a y la publicaci&oacute;n dej&oacute; de ser v&aacute;lida. '+
+        'Vuelve a publicarla (Archivo &rarr; Compartir &rarr; Publicar en la web) y actualiza la URL del calendario.'
+      : '<b>No se pudieron cargar los datos.</b><br><br>'+
+        'Causa probable: el archivo se abri&oacute; desde el disco (file://) y el navegador bloquea la conexi&oacute;n, o no hay conexi&oacute;n a internet.<br><br>'+
+        '&Aacute;brelo por su enlace https (hosting), no como archivo local.';
     calArea.innerHTML='<div class="empty-msg" style="text-align:left;max-width:640px;margin:0 auto">'+
-      '<b>No se pudieron cargar los datos.</b><br><br>'+
-      'Causa probable: el archivo se abri&oacute; directamente desde el disco (file://) y el navegador bloquea la conexi&oacute;n por seguridad, o no hay conexi&oacute;n a internet.<br><br>'+
-      'Soluci&oacute;n: publica este HTML en un hosting (Paso 5) y &aacute;brelo por su enlace https. As&iacute; la lectura de Google Sheets funciona sin problemas.<br><br>'+
-      '<small>Detalle t&eacute;cnico: '+((err&&err.message)?err.message:err)+'</small></div>';
+      cuerpo+'<br><br><small>Detalle t&eacute;cnico: '+msg+'</small></div>';
   }
 }
 
@@ -387,6 +394,20 @@ function tip(e){let s=SUBJ[e.subj].name;if(e.prof!=="\u2014")s+=" \u00b7 "+e.pro
 function timeRange(e){const a=fmtTime(e.dispMin);if(e.dispEnd!=null&&e.dispEnd!==e.dispMin)return a+" \u2013 "+fmtTime(e.dispEnd);return a;}
 function evHTML(e){
   const c=SUBJ[e.subj].color;
+  if(isTask(e)){
+    // Entregable: ficha reducida (hora de fin, asignatura, título, profesor, aviso de huso)
+    const dEnd=(e.dispEnd!=null?e.dispEnd:e.dispMin);
+    const cross=dEnd>=1440;
+    let meta=[];
+    if(e.prof!=="\u2014")meta.push('<b>Prof.</b> '+e.prof);
+    if(cross)meta.push('<b class="xday">Aviso:</b> esta hora ya es de la madrugada del d\u00eda siguiente en tu huso; la fecha mostrada arriba es la que corresponde (hora Costa Rica).');
+    return '<div class="ev" style="--cc:'+c+'" title="'+tip(e)+'">'+
+      '<span class="t">Entrega \u00b7 '+fmtTime(dEnd)+(cross?' <span class="xday">(d\u00eda sig.)</span>':'')+'</span>'+
+      '<span class="n">'+SUBJ[e.subj].name+'</span>'+
+      (e.label?'<span class="ti">'+e.label+'</span>':'')+
+      (meta.length?'<span class="meta">'+meta.join(" \u00b7 ")+'</span>':'')+
+      '</div>';
+  }
   const cross=e.dispMin>=1440; // la hora convertida cae en la madrugada del día siguiente
   let meta=[];
   if(e.prof!=="\u2014")meta.push('<b>Prof.</b> '+e.prof);

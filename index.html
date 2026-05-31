@@ -73,12 +73,13 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .ms-btn{width:100%;text-align:left;padding:6px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);font-size:.82rem;font-family:'Archivo',sans-serif;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ms-btn:hover{border-color:var(--accent)}
 .ms-btn.on{border-color:var(--accent);color:var(--accent2);font-weight:600}
-.ms-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;min-width:200px;max-height:280px;overflow-y:auto;background:#fff;border:1px solid var(--line);border-radius:9px;box-shadow:0 14px 30px -10px rgba(0,0,0,.45);z-index:50;padding:4px}
+.ms-panel{display:none;position:absolute;top:calc(100% + 3px);left:0;right:0;min-width:175px;max-height:300px;overflow-y:auto;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 14px 30px -10px rgba(0,0,0,.45);z-index:50;padding:3px}
 .ms.open .ms-panel{display:block}
-.ms-opt{display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:6px;font-size:.82rem;color:var(--ink);cursor:pointer;white-space:normal}
+.ms-opt{display:flex;align-items:center;gap:6px;padding:2px 6px;border-radius:4px;font-size:.78rem;line-height:1.25;color:var(--ink);cursor:pointer;white-space:normal}
 .ms-opt:hover{background:var(--paper2)}
-.ms-opt input{width:15px;height:15px;accent-color:var(--accent);flex:0 0 auto}
-.ms-empty{padding:6px;color:var(--ink-soft);font-size:.78rem}
+.ms-opt input{width:13px;height:13px;accent-color:var(--accent);flex:0 0 auto}
+.ms-all{font-weight:700;border-bottom:1px solid var(--line);margin-bottom:2px;padding-bottom:3px;position:sticky;top:-3px;background:#fff}
+.ms-empty{padding:5px 6px;color:var(--ink-soft);font-size:.76rem}
 /* Bloques (mes / semana) */
 .section{margin-top:18px}
 .section:first-child{margin-top:2px}
@@ -340,8 +341,9 @@ function fmtWeekLabel(mon,sun){
 function updateMultiBtn(id){
   const ms=document.getElementById(id);if(!ms)return;
   const set=state[MULTI.find(c=>c.id===id).set];
+  const total=(OPTS[id]||[]).length;
   const btn=ms.querySelector(".ms-btn"),ph=btn.dataset.ph;
-  if(set.size===0){btn.textContent=ph;btn.classList.remove("on");}
+  if(set.size===0||(total>0&&set.size===total)){btn.textContent=ph;btn.classList.remove("on");}
   else{btn.classList.add("on");
     if(set.size===1){const v=[...set][0];const o=(OPTS[id]||[]).find(o=>o.value===v);btn.textContent=o?o.label:"1 seleccionado";}
     else btn.textContent=set.size+" seleccionados";}
@@ -351,9 +353,16 @@ function buildMulti(id){
   const set=state[MULTI.find(c=>c.id===id).set];
   const opts=OPTS[id]||[];
   const panel=ms.querySelector(".ms-panel");
-  panel.innerHTML=opts.length?opts.map(o=>'<label class="ms-opt"><input type="checkbox" value="'+escAttr(o.value)+'"'+(set.has(o.value)?" checked":"")+'><span>'+o.label+'</span></label>').join(""):'<div class="ms-empty">Sin opciones</div>';
-  panel.querySelectorAll("input").forEach(cb=>{
-    cb.onchange=()=>{ if(cb.checked)set.add(cb.value); else set.delete(cb.value); updateMultiBtn(id); saveState(); render(); };
+  const total=opts.length, allOn=total>0&&set.size===total;
+  if(!total){panel.innerHTML='<div class="ms-empty">Sin opciones</div>';updateMultiBtn(id);return;}
+  panel.innerHTML='<label class="ms-opt ms-all"><input type="checkbox" class="ms-todo"'+(allOn?" checked":"")+'><span>Todo</span></label>'+
+    opts.map(o=>'<label class="ms-opt"><input type="checkbox" value="'+escAttr(o.value)+'"'+(set.has(o.value)?" checked":"")+'><span>'+o.label+'</span></label>').join("");
+  const todo=panel.querySelector(".ms-todo");
+  todo.onchange=()=>{ if(todo.checked){opts.forEach(o=>set.add(o.value));}else{set.clear();} buildMulti(id); saveState(); render(); };
+  panel.querySelectorAll("input:not(.ms-todo)").forEach(cb=>{
+    cb.onchange=()=>{ if(cb.checked)set.add(cb.value); else set.delete(cb.value);
+      const t=panel.querySelector(".ms-todo"); if(t)t.checked=(set.size===total);
+      updateMultiBtn(id); saveState(); render(); };
   });
   updateMultiBtn(id);
 }

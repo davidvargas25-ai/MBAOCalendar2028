@@ -75,7 +75,7 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .ms-btn.on{border-color:var(--accent);color:var(--accent2);font-weight:600}
 .ms-panel{display:none;position:absolute;top:calc(100% + 3px);left:0;right:0;min-width:175px;max-height:300px;overflow-y:auto;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 14px 30px -10px rgba(0,0,0,.45);z-index:50;padding:3px}
 .ms.open .ms-panel{display:block}
-.ms-opt{display:flex;align-items:center;gap:6px;padding:2px 6px;border-radius:4px;font-size:.78rem;line-height:1.25;color:var(--ink);cursor:pointer;white-space:normal}
+.ms-opt{display:flex;align-items:center;gap:6px;padding:2px 6px;border-radius:4px;font-size:.78rem;line-height:1.25;color:var(--ink);cursor:pointer;white-space:normal;text-transform:none;letter-spacing:normal;font-weight:400}
 .ms-opt:hover{background:var(--paper2)}
 .ms-opt input{width:13px;height:13px;accent-color:var(--accent);flex:0 0 auto}
 .ms-all{font-weight:700;border-bottom:1px solid var(--line);margin-bottom:2px;padding-bottom:3px;position:sticky;top:-3px;background:#fff}
@@ -116,8 +116,13 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .ev .xday{color:var(--accent2);font-weight:700}
 .ev .meta .xday{color:var(--accent2)}
 .ev .glist{list-style:none;margin:3px 0 0;padding:0;display:flex;flex-direction:column;gap:3px}
-.ev .glist li{font-size:.72rem;color:var(--ink);line-height:1.25;overflow-wrap:anywhere}
-.ev .glist .gt{font-weight:700;color:var(--cc);font-variant-numeric:tabular-nums;font-size:.7rem;margin-right:3px}
+.ev .glist li{font-size:.74rem;color:var(--ink);font-weight:600;line-height:1.25;overflow-wrap:anywhere}
+.ev .glist li.done .gi{text-decoration:line-through;opacity:.55}
+.til{display:flex;align-items:flex-start;gap:6px;cursor:pointer;margin-top:2px}
+.til .ck{flex:0 0 auto;display:flex;align-items:center;height:1.15em}
+.taskdone{width:14px;height:14px;accent-color:var(--cc,var(--accent));cursor:pointer;flex:0 0 auto;margin:0}
+.ev.task.done{opacity:.6}
+.ev.task.done .ti{text-decoration:line-through}
 .empty-msg{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--on-dark-soft);font-style:italic;font-family:'Fraunces',serif}
 .legend{flex:0 0 auto;margin-top:8px;border-top:1px solid rgba(255,255,255,.2);padding-top:8px;max-height:80px;overflow-y:auto}
 .legend h3{font-family:'Fraunces',serif;font-weight:600;font-size:.82rem;margin:0 0 6px;color:var(--on-dark)}
@@ -383,6 +388,16 @@ function initFilters(){
 // Una fila es entregable/tarea si su columna Tipo contiene "entreg" o "tarea"
 function isTask(e){return /entreg|tarea/.test((e.tipo||"").toLowerCase());}
 function isExam(e){return (e.tipo||"").trim().toLowerCase()==="examen";}
+// ===== Tareas completadas: marca LOCAL y privada por navegador (localStorage) =====
+const DONE_KEY="mbao2028_hechas";
+let DONE=new Set();
+(function(){try{const a=JSON.parse(localStorage.getItem(DONE_KEY)||"[]");if(Array.isArray(a))DONE=new Set(a);}catch(e){}})();
+function saveDone(){try{localStorage.setItem(DONE_KEY,JSON.stringify([...DONE]));}catch(e){}}
+// Identidad estable: si cambia fecha, asignatura, hora o título, la marca deja de aplicar
+function taskId(e){return e.dateKey+"|"+e.subj+"|"+e.min+"|"+e.end+"|"+(e.label||"");}
+function isDone(e){return DONE.has(taskId(e));}
+function doneBox(e){return '<input type="checkbox" class="taskdone" data-id="'+encodeURIComponent(taskId(e))+'"'+(isDone(e)?" checked":"")+' title="Marcar como completada">';}
+function toggleDone(id,on){if(on)DONE.add(id);else DONE.delete(id);saveDone();const st=calArea?calArea.scrollTop:0;render();if(calArea)calArea.scrollTop=st;}
 function passFilters(e, dt){
   if(state.task && !isTask(e)) return false;
   if(state.exam && !isExam(e)) return false;
@@ -399,6 +414,7 @@ function eventsByDay(dateKey){
   return EVENTS.filter(e=>e.dateKey===dateKey).map(e=>({...e,dispMin:shiftMin(e.min,state.tz),dispEnd:(e.end!=null?shiftMin(e.end,state.tz):null)})).sort((a,b)=>a.dispMin-b.dispMin);
 }
 const calArea=document.getElementById("calArea");
+calArea.addEventListener("change",ev=>{const t=ev.target;if(t&&t.classList&&t.classList.contains("taskdone")){toggleDone(decodeURIComponent(t.dataset.id),t.checked);}});
 const periodTitle=document.getElementById("periodTitle");
 function tip(e){let s=SUBJ[e.subj].name;if(e.prof!=="\u2014")s+=" \u00b7 "+e.prof;if(e.ses)s+=" \u00b7 Sesi\u00f3n "+e.ses;return s.replace(/"/g,"&quot;");}
 function timeRange(e){const a=fmtTime(e.dispMin);if(e.dispEnd!=null&&e.dispEnd!==e.dispMin)return a+" \u2013 "+fmtTime(e.dispEnd);return a;}
@@ -416,10 +432,10 @@ function evHTML(e){
     let meta=[];
     if(e.prof!=="\u2014")meta.push('<b>Prof.</b> '+e.prof);
     if(crosses&&diff>0)meta.push('<b class="xday">Por husos horarios</b> tienes '+diff+' hora'+(diff===1?'':'s')+' m\u00e1s para finalizar esta tarea.');
-    return '<div class="ev" style="--cc:'+c+'" title="'+tip(e)+'">'+
+    return '<div class="ev task'+(isDone(e)?' done':'')+'" style="--cc:'+c+'" title="'+tip(e)+'">'+
       '<span class="t">Entrega \u00b7 '+fmtTime(showMin)+(crosses?' <span class="xday">(hora CR)</span>':'')+'</span>'+
       '<span class="n">'+SUBJ[e.subj].name+'</span>'+
-      (e.label?'<span class="ti">'+e.label+'</span>':'')+
+      (e.label?'<label class="til"><span class="ck">'+doneBox(e)+'</span><span class="ti">'+e.label+'</span></label>':'')+
       (meta.length?'<span class="meta">'+meta.join(" \u00b7 ")+'</span>':'')+
       '</div>';
   }
@@ -438,43 +454,41 @@ function evHTML(e){
 }
 /* Caja agrupada de entregables (misma asignatura + profesor en el día) */
 function groupTaskHTML(items){
-  const c=SUBJ[items[0].subj].color, prof=items[0].prof, diff=state.tz-BASE_TZ;
-  let anyCross=false;
-  const lis=items.map(e=>{
-    const endConv=(e.dispEnd!=null?e.dispEnd:e.dispMin);
-    const endCR=(e.end!=null?e.end:e.min);
-    const crosses=endConv>=1440||endConv<0;
-    if(crosses)anyCross=true;
-    const showMin=crosses?endCR:endConv;
-    const t=fmtTime(showMin)+(crosses?' <span class="xday">(hora CR)</span>':'');
-    return '<li><span class="gt">'+t+'</span>'+(e.label||'(sin t\u00edtulo)')+'</li>';
-  }).join("");
+  const e0=items[0], c=SUBJ[e0.subj].color, prof=e0.prof, diff=state.tz-BASE_TZ;
+  const endConv=(e0.dispEnd!=null?e0.dispEnd:e0.dispMin);
+  const endCR=(e0.end!=null?e0.end:e0.min);
+  const crosses=endConv>=1440||endConv<0;
+  const showMin=crosses?endCR:endConv;
+  const tlabel='Entrega \u00b7 '+fmtTime(showMin)+(crosses?' <span class="xday">(hora CR)</span>':'');
+  const ordered=items.slice().sort((a,b)=>(isDone(a)?1:0)-(isDone(b)?1:0)); // pendientes arriba, completadas al final
+  const lis=ordered.map(e=>'<li class="'+(isDone(e)?'done':'')+'"><label class="til"><span class="ck">'+doneBox(e)+'</span><span class="gi">'+(e.label||'(sin t\u00edtulo)')+'</span></label></li>').join("");
   let meta=[];
   if(prof!=="\u2014")meta.push('<b>Prof.</b> '+prof);
-  if(anyCross&&diff>0)meta.push('<b class="xday">Por husos horarios</b> tienes '+diff+' hora'+(diff===1?'':'s')+' m\u00e1s para finalizar estas tareas.');
-  return '<div class="ev evgroup" style="--cc:'+c+'" title="'+SUBJ[items[0].subj].name+'">'+
-    '<span class="t">Entregas \u00b7 '+items.length+'</span>'+
-    '<span class="n">'+SUBJ[items[0].subj].name+'</span>'+
+  if(crosses&&diff>0)meta.push('<b class="xday">Por husos horarios</b> tienes '+diff+' hora'+(diff===1?'':'s')+' m\u00e1s para finalizar estas tareas.');
+  return '<div class="ev task evgroup'+(items.every(isDone)?' done':'')+'" style="--cc:'+c+'" title="'+SUBJ[e0.subj].name+'">'+
+    '<span class="t">'+tlabel+'</span>'+
+    '<span class="n">'+SUBJ[e0.subj].name+'</span>'+
     '<ul class="glist">'+lis+'</ul>'+
     (meta.length?'<span class="meta">'+meta.join(" \u00b7 ")+'</span>':'')+
     '</div>';
 }
-/* Arma los eventos de un día: agrupa entregables por asignatura+profesor; el resto normal */
+/* Arma los eventos de un día. Opción A: agrupa entregables solo cuando coinciden asignatura Y hora */
 function renderDayEvents(evs){
   const groups={}, units=[];
   evs.forEach(e=>{
     if(isTask(e)){
-      const key=e.subj+"|"+(e.prof||"");
+      const key=e.subj+"|"+(e.prof||"")+"|"+e.min+"|"+e.end;
       (groups[key]=groups[key]||[]).push(e);
     }else{
-      units.push({min:e.dispMin, html:evHTML(e)});
+      units.push({min:e.dispMin, done:false, html:evHTML(e)});
     }
   });
   Object.keys(groups).forEach(k=>{
-    const items=groups[k].slice().sort((a,b)=>a.dispMin-b.dispMin);
-    units.push({min:items[0].dispMin, html: items.length>1?groupTaskHTML(items):evHTML(items[0])});
+    const items=groups[k];
+    const done = items.length>1 ? items.every(isDone) : isDone(items[0]);
+    units.push({min:items[0].dispMin, done, html: items.length>1?groupTaskHTML(items):evHTML(items[0])});
   });
-  units.sort((a,b)=>a.min-b.min);
+  units.sort((a,b)=>((a.done?1:0)-(b.done?1:0)) || (a.min-b.min));
   return units.map(u=>u.html).join("");
 }
 /* Celda de un día dentro de la rejilla de 7 columnas */

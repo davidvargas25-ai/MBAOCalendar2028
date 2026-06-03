@@ -163,6 +163,30 @@ select:disabled{opacity:.5;cursor:not-allowed}
   .topbar.filtros-open .controls{display:grid}
   .statusline{display:none}
 }
+
+/* ── No Podrás Ver: vista timeline Gantt ── */
+.np-grid{display:flex;flex-wrap:wrap;gap:16px;margin-top:16px;align-items:flex-start}
+.np-day{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;flex:1;min-width:260px;max-width:420px;box-shadow:var(--shadow)}
+.np-day-hdr{display:flex;align-items:baseline;gap:9px;padding:10px 14px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#fff,#f8f6f0)}
+.np-wd{font-family:'Fraunces',serif;font-weight:700;font-size:1.05rem;color:var(--ink)}
+.np-dt{font-size:.72rem;color:var(--ink-soft)}
+.np-lane-hdrs{display:flex;border-bottom:1px solid var(--line);background:#fafaf8}
+.np-axis-spacer{width:46px;flex:0 0 46px;border-right:1px solid var(--line)}
+.np-lane-hdr{flex:1;font-size:.59rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft);text-align:center;padding:4px 6px}
+.np-body{display:flex;position:relative}
+.np-axis{width:46px;flex:0 0 46px;position:relative;background:#fafaf8;border-right:1px solid var(--line)}
+.np-tick{position:absolute;right:5px;font-size:.58rem;color:var(--ink-soft);transform:translateY(-50%);line-height:1;white-space:nowrap}
+.np-tick.major{font-weight:700;color:var(--ink)}
+.np-lanes{display:flex;flex:1;gap:4px;padding:0 5px 10px;position:relative;box-sizing:border-box}
+.np-tline{position:absolute;left:0;right:0;pointer-events:none}
+.np-tline.major{border-top:1px solid rgba(0,0,0,.14)}
+.np-tline.minor{border-top:1px dashed rgba(0,0,0,.06)}
+.np-lane{flex:1;position:relative;min-width:0}
+.np-ev{position:absolute;left:0;right:0;border-radius:5px;padding:3px 6px;display:flex;flex-direction:column;gap:1px;border-left:3px solid var(--ev-color,#888);background:color-mix(in srgb,var(--ev-color,#888) 14%,#fff);overflow:hidden;box-sizing:border-box;min-height:20px}
+.np-ev-t{font-size:.59rem;font-weight:700;color:var(--ev-color);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.np-ev-n{font-size:.73rem;font-weight:600;color:var(--ink);line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.np-ev-s{font-size:.61rem;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.np-empty-msg{padding:60px 20px;text-align:center;color:var(--ink-soft);font-family:'Fraunces',serif;font-style:italic;font-size:1.05rem}
 </style>
 </head>
 <body>
@@ -778,9 +802,126 @@ function renderWeek(){
   }
   calArea.innerHTML=html||'<div class="empty-msg">No hay eventos que coincidan con los filtros.</div>';
 }
+
+function renderNoPuedes(){
+  const PX=1.8, PAD=25, MIN_H=20;
+  const tz=state.tz;
+
+  // Agrupar MBA events por día
+  const mbaByDay={};
+  EVENTS.filter(e=>e.subj!=="mundial").forEach(e=>{
+    if(!mbaByDay[e.dateKey])mbaByDay[e.dateKey]=[];
+    mbaByDay[e.dateKey].push(e);
+  });
+
+  // Construir días con clash
+  const dayMap=new Map();
+  MUNDIAL_EVENTS.forEach(me=>{
+    if(!hasClash(me))return;
+    if(!dayMap.has(me.dateKey))dayMap.set(me.dateKey,{partidos:[],clases:[]});
+    dayMap.get(me.dateKey).partidos.push(me);
+  });
+  dayMap.forEach((day,dk)=>{
+    const all=mbaByDay[dk]||[];
+    day.clases=all.filter(mba=>day.partidos.some(p=>mba.min<p.end&&mba.end>p.min));
+  });
+
+  if(!dayMap.size){
+    calArea.innerHTML='<div class="np-empty-msg">🎉 Ningún partido choca con tus clases</div>';
+    const _pt=document.getElementById('periodTitle');if(_pt)_pt.innerHTML='';return;
+  }
+
+  const days=[...dayMap.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  const _pt=document.getElementById('periodTitle');
+  if(_pt)_pt.innerHTML='<b>'+days.length+'</b> '+(days.length===1?'día':'días')+' con clashes &middot; <b>'+days.reduce((s,[,d])=>s+d.partidos.length,0)+'</b> partidos que no podrás ver';
+
+  let html='<div class="np-grid">';
+
+  days.forEach(([dk,{partidos,clases}])=>{
+    const [y,mo,d]=dk.split("-").map(Number);
+    const dt=new Date(y,mo-1,d);
+
+    // Calcular tiempos de display
+    const disp=e=>{
+      let s=shiftMin(e.min,tz);
+      let en=shiftMin(e.end||e.min+60,tz);
+      if(en<=s)en+=1440;
+      return{s,en,ev:e};
+    };
+    const pDisps=partidos.map(disp);
+    const cDisps=clases.map(disp);
+    const all=[...pDisps,...cDisps];
+
+    const dayStart=Math.min(...all.map(x=>x.s))-PAD;
+    const dayEnd=Math.max(...all.map(x=>x.en))+PAD;
+    const totalH=Math.max(80,(dayEnd-dayStart)*PX);
+
+    // Eje de tiempo: ticks cada 30 min
+    let axisH='',linesH='';
+    const ft=Math.ceil(dayStart/30)*30;
+    for(let t=ft;t<=dayEnd;t+=30){
+      const top=(t-dayStart)*PX;
+      const maj=t%60===0;
+      axisH+='<div class="np-tick'+(maj?' major':'')+'" style="top:'+top+'px">'+(maj?fmtTime(t):'')+'</div>';
+      linesH+='<div class="np-tline '+(maj?'major':'minor')+'" style="top:'+top+'px"></div>';
+    }
+
+    // Partido events
+    let pEvH='';
+    pDisps.forEach(({s,en,ev:p})=>{
+      const top=(s-dayStart)*PX;
+      const h=Math.max(MIN_H,(en-s)*PX);
+      const l=(p.loc||"").toLowerCase();
+      const cc=/guadalajara|monterrey|mexico.?city|ciudad.de/i.test(l)?"var(--wc-green)":
+               /toronto|vancouver/i.test(l)?"var(--wc-red)":"var(--wc-blue)";
+      const lbl=p.label.replace(/[\u{1F1E0}-\u{1F1FF}]/gu,"").trim();
+      const sc=p.finished&&p.homeGoals!=null?" &middot; "+p.homeGoals+"&ndash;"+p.awayGoals:"";
+      pEvH+='<div class="np-ev" style="--ev-color:'+cc+';top:'+top+'px;height:'+h+'px">'+
+        '<span class="np-ev-t">'+fmtTime(s)+'&ndash;'+fmtTime(en)+'</span>'+
+        '<span class="np-ev-n">&#9917; '+lbl+sc+'</span>'+
+        '<span class="np-ev-s">'+( p.ses||"")+'</span></div>';
+    });
+
+    // Clase/Examen events
+    let cEvH='';
+    cDisps.forEach(({s,en,ev:e})=>{
+      const top=(s-dayStart)*PX;
+      const h=Math.max(MIN_H,(en-s)*PX);
+      const cc=(SUBJ[e.subj]&&SUBJ[e.subj].color)||"var(--c-act)";
+      const prof=(e.prof&&e.prof!=="\u2014"&&e.prof!=="—")?e.prof:"";
+      cEvH+='<div class="np-ev" style="--ev-color:'+cc+';top:'+top+'px;height:'+h+'px">'+
+        '<span class="np-ev-t">'+fmtTime(s)+'&ndash;'+fmtTime(en)+'</span>'+
+        '<span class="np-ev-n">'+e.label+'</span>'+
+        '<span class="np-ev-s">'+prof+'</span></div>';
+    });
+
+    html+='<div class="np-day">'+
+      '<div class="np-day-hdr"><span class="np-wd">'+DOWL[dt.getDay()]+'</span>'+
+      '<span class="np-dt">'+d+' de '+MONTHS[mo-1].toLowerCase()+' '+y+'</span></div>'+
+      '<div class="np-lane-hdrs">'+
+        '<div class="np-axis-spacer"></div>'+
+        '<div class="np-lane-hdr">&#9917; Partido</div>'+
+        '<div class="np-lane-hdr">&#128218; Clase / Examen</div>'+
+      '</div>'+
+      '<div class="np-body" style="height:'+(totalH+8)+'px">'+
+        '<div class="np-axis" style="height:'+(totalH+8)+'px">'+axisH+'</div>'+
+        '<div class="np-lanes" style="height:'+(totalH+8)+'px">'+
+          linesH+
+          '<div class="np-lane">'+pEvH+'</div>'+
+          '<div class="np-lane">'+cEvH+'</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  });
+
+  html+='</div>';
+  calArea.innerHTML=html;
+}
+
 function render(){
-  if(!EVENTS.length){return;}
-  if(state.view==="month")renderMonth();else renderWeek();
+  if(!EVENTS.length&&!state.nopuedes){return;}
+  if(state.nopuedes){renderNoPuedes();}
+  else if(state.view==="month")renderMonth();else renderWeek();
   const diff=state.tz-BASE_TZ;
   document.getElementById("tzLine").innerHTML=diff===0?('Horas en <b>'+state.tzLabel+'</b> \u2014 hora base.'):('Horas en <b>'+state.tzLabel+'</b> \u2014 '+(diff>0?'+':'')+diff+' h respecto a la base (Centroam\u00e9rica, UTC\u22126).');
 }

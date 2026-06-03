@@ -118,6 +118,7 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .weekhead{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:0 0 6px;padding:0 2px}
 .weekhead span{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--on-dark-soft)}
 .weekrow{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:8px;align-items:start}
+.weekrow.we2{grid-template-columns:repeat(2,1fr)}
 .daycell{display:flex;flex-direction:column;gap:5px;min-height:30px;border-radius:10px;padding:2px}
 .daycell.noev{opacity:.4}
 .daycell.out{visibility:hidden}
@@ -743,7 +744,10 @@ function renderDayEvents(evs){
   return units.map(u=>u.html).join("");
 }
 /* Celda de un día dentro de la rejilla de 7 columnas */
-const WEEKHEAD='<div class="weekhead">'+["Lun","Mar","Mi\u00e9","Jue","Vie","S\u00e1b","Dom"].map(d=>'<span>'+d+'</span>').join("")+'</div>';
+function getWEEKHEAD(){
+  const days=state.weekend?["S\u00e1b","Dom"]:["Lun","Mar","Mi\u00e9","Jue","Vie","S\u00e1b","Dom"];
+  return '<div class="weekhead" style="grid-template-columns:repeat('+days.length+',1fr)">'+days.map(d=>'<span>'+d+'</span>').join("")+'</div>';
+}
 function dayCellHTML(dt, restrictMonth){
   const dk=keyOf(dt), dow=dt.getDay();
   const inScope = !restrictMonth || (dt.getFullYear()+"-"+pad(dt.getMonth()+1))===restrictMonth;
@@ -759,15 +763,17 @@ function dayCellHTML(dt, restrictMonth){
     renderDayEvents(evs)+
     '</div>', count:evs.length};
 }
-/* Fila de una semana: 7 columnas Lun..Dom */
+/* Fila de una semana: 7 columnas Lun..Dom (o 2 en modo fin de semana) */
 function weekRowHTML(weekStart, restrictMonth){
   let cells="",count=0;
-  for(let i=0;i<7;i++){
+  const indices=state.weekend?[5,6]:[0,1,2,3,4,5,6];
+  indices.forEach(i=>{
     const dt=new Date(weekStart);dt.setDate(dt.getDate()+i);
     const c=dayCellHTML(dt,restrictMonth);
     cells+=c.html;count+=c.count;
-  }
-  return {html:'<div class="weekrow">'+cells+'</div>', count};
+  });
+  const cls="weekrow"+(state.weekend?" we2":"");
+  return {html:'<div class="'+cls+'">'+cells+'</div>', count};
 }
 /* Date range spanning the whole dataset. */
 function datasetBounds(){
@@ -797,7 +803,7 @@ function renderMonth(){
       html+='<div class="section"><div class="section-head">'+
         '<span class="sh-title">'+MONTHS[m]+' '+y+'</span>'+
         '<span class="sh-count">'+plural(count)+'</span></div>'+
-        WEEKHEAD+rows+'</div>';
+        getWEEKHEAD()+rows+'</div>';
     }
     m++;if(m>11){m=0;y++;}
   }
@@ -821,7 +827,7 @@ function renderWeek(){
       html+='<div class="section"><div class="section-head">'+
         '<span class="sh-sub">Semana</span><span class="sh-title" style="font-size:clamp(1.05rem,2.2vw,1.4rem)">'+label+'</span>'+
         '<span class="sh-count">'+plural(wr.count)+'</span></div>'+
-        WEEKHEAD+wr.html+'</div>';
+        getWEEKHEAD()+wr.html+'</div>';
     }
     cur.setDate(cur.getDate()+7);
   }

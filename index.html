@@ -165,26 +165,24 @@ select:disabled{opacity:.5;cursor:not-allowed}
   .statusline{display:none}
 }
 
-/* ── No Podrás Ver: vista grid calendario con fondo oscuro ── */
-.np-view{background:#0b1829;border-radius:14px;overflow-x:auto;margin-top:16px}
-.npg{display:grid;position:relative;border-radius:14px;overflow:hidden}
-.npg-hora-hdr,.npg-day-hdr{position:sticky;top:0;z-index:4;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;letter-spacing:.04em;border-bottom:1px solid rgba(255,255,255,.14);padding:6px 4px;box-sizing:border-box;background:#0b1829;color:rgba(255,255,255,.85)}
-.npg-hora-hdr{font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);border-right:1px solid rgba(255,255,255,.1)}
-.npg-day-hdr{text-transform:capitalize;border-left:2px solid rgba(255,255,255,.08)}
-.npg-time{display:flex;align-items:flex-start;justify-content:flex-end;padding:2px 7px 0 0;font-size:.62rem;font-variant-numeric:tabular-nums;color:rgba(255,255,255,.35);background:#0b1829;border-right:1px solid rgba(255,255,255,.1);box-sizing:border-box}
-.npg-time.hr{color:rgba(255,255,255,.65);font-weight:600}
-.npg-bg{background:#0b1829;border-top:1px solid rgba(255,255,255,.04);box-sizing:border-box}
-.npg-bg.hr{border-top:1px solid rgba(255,255,255,.11)}
-.npg-bg.partido-col{border-left:1px solid rgba(255,255,255,.06)}
-.npg-bg.day-sep{border-left:2px solid rgba(255,255,255,.14)}
-.npg-ev{border-radius:5px;padding:3px 6px;display:flex;flex-direction:column;gap:1px;border-left:3px solid var(--ev-color);background:color-mix(in srgb,var(--ev-color) 38%,#0b1829);overflow:hidden;z-index:2;box-sizing:border-box;margin:1px 2px 1px 1px;min-height:20px}
-.npg-ev-lbl{font-size:.7rem;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2}
-.npg-ev-time{font-size:.6rem;color:rgba(255,255,255,.6);font-variant-numeric:tabular-nums;white-space:nowrap}
+/* ── No Podrás Ver: vista semanal fija ── */
+.np-wrap{margin-top:16px;display:flex;flex-direction:column;gap:24px}
 .np-empty-msg{padding:60px 20px;text-align:center;color:var(--ink-soft);font-family:'Fraunces',serif;font-style:italic;font-size:1.05rem}
-.np-week{margin-top:22px}
-.np-week-hdr{font-size:.72rem;font-weight:800;letter-spacing:.1em;color:var(--ink);padding:4px 2px 8px;text-transform:uppercase}
-.np-week-body{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start}
-.np-view{flex:1;min-width:180px;background:#0b1829;border-radius:10px;overflow:hidden}
+.np-sem{display:flex;flex-direction:column;gap:10px}
+.np-sem-hdr{font-size:.72rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);padding:2px 0 4px}
+.np-bloques{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start}
+.np-bloque{flex:1;min-width:200px;background:#0b1829;border-radius:10px;overflow:hidden}
+.np-grid{display:grid;width:100%}
+.np-g-hora-hdr{background:#0b1829;border-bottom:1px solid rgba(255,255,255,.15);border-right:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);padding:5px 4px;box-sizing:border-box;position:sticky;top:0;z-index:3}
+.np-g-day-hdr{background:#0b1829;border-bottom:1px solid rgba(255,255,255,.15);border-left:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:.69rem;font-weight:700;color:rgba(255,255,255,.88);padding:5px 4px;box-sizing:border-box;position:sticky;top:0;z-index:3;text-transform:capitalize}
+.np-g-time{background:#0b1829;border-top:1px solid rgba(255,255,255,.07);border-right:1px solid rgba(255,255,255,.12);display:flex;align-items:flex-start;justify-content:flex-end;padding:2px 6px 0 2px;font-size:.6rem;font-variant-numeric:tabular-nums;color:rgba(255,255,255,.5);box-sizing:border-box}
+.np-g-cell{background:#0b1829;border-top:1px solid rgba(255,255,255,.07);border-left:1px solid rgba(255,255,255,.08);box-sizing:border-box;position:relative;overflow:hidden}
+.np-g-cell.hr{border-top:1px solid rgba(255,255,255,.18)}
+.np-g-cell.day-sep{border-left:2px solid rgba(255,255,255,.18)}
+.np-ev-wrap{position:absolute;inset:1px 2px;display:flex;gap:2px;overflow:hidden}
+.np-ev{flex:1;border-radius:4px;padding:2px 5px;display:flex;flex-direction:column;gap:1px;border-left:3px solid var(--ev-color);background:color-mix(in srgb,var(--ev-color) 40%,#0b1829);overflow:hidden;min-width:0}
+.np-ev-lbl{font-size:.67rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.np-ev-time{font-size:.58rem;color:rgba(255,255,255,.6);white-space:nowrap;font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -802,152 +800,188 @@ function renderWeek(){
 }
 
 function renderNoPuedes(){
-  const SLOT=30, SH=30, PAD=1, tz=state.tz;
+  // Rangos horarios FIJOS (minutos desde medianoche, hora Costa Rica base)
+  const LV={s:17*60, e:22*60};   // Lunes y Viernes: 5pm–10pm
+  const SA={s:8*60,  e:17*60};   // Sábado: 8am–5pm
+  const SLOT=60;                  // 1 fila = 1 hora
+  const ROW_H=44;                 // px por hora
+  const HDR_H=30;                 // px cabecera
 
-  // Agrupar MBA por día
+  // ── Helpers ──────────────────────────────────────────────────
+  const pad2=n=>String(n).padStart(2,'0');
+  const tz=state.tz;
+  const toDisp=(min,end)=>{
+    let s=shiftMin(min,tz), e2=shiftMin(end||min+60,tz);
+    if(e2<=s)e2+=1440; return{s,e2};
+  };
+  const MN=typeof MONTHS!=='undefined'?MONTHS:[];
+  const DW=typeof DOWL!=='undefined'?DOWL:[];
+
+  // ── Agrupar MBA por día ───────────────────────────────────────
   const mbaByDay={};
-  EVENTS.filter(e=>e.subj!=="mundial").forEach(e=>{
+  EVENTS.filter(e=>e.subj!=='mundial').forEach(e=>{
     if(!mbaByDay[e.dateKey])mbaByDay[e.dateKey]=[];
     mbaByDay[e.dateKey].push(e);
   });
 
-  // Días con clash
-  const dayMap=new Map();
+  // ── Detectar semanas con conflicto ────────────────────────────
+  // Semana ISO: lunes→domingo. Key = YYYY-MM-DD del lunes
+  const isoMonday=dk=>{
+    const[y,mo,d]=dk.split('-').map(Number);
+    const dt=new Date(y,mo-1,d);
+    const dow=dt.getDay(); // 0=dom
+    const diff=dow===0?-6:1-dow;
+    const m=new Date(dt); m.setDate(d+diff); return m;
+  };
+  const dkOf=dt=>{
+    const y=dt.getFullYear(),mo=dt.getMonth()+1,d=dt.getDate();
+    return y+'-'+pad2(mo)+'-'+pad2(d);
+  };
+
+  // Mapa semana→{mon, clashDays:Set}
+  const weekClash=new Map();
   MUNDIAL_EVENTS.forEach(me=>{
     if(!hasClash(me))return;
-    if(!dayMap.has(me.dateKey))dayMap.set(me.dateKey,{partidos:[],clases:[]});
-    dayMap.get(me.dateKey).partidos.push(me);
+    const mon=isoMonday(me.dateKey);
+    const wk=dkOf(mon);
+    if(!weekClash.has(wk))weekClash.set(wk,{mon,clashDays:new Set()});
+    weekClash.get(wk).clashDays.add(me.dateKey);
   });
-  if(!dayMap.size){
+
+  if(!weekClash.size){
     calArea.innerHTML='<div class="np-empty-msg">🎉 Ningún partido choca con tus clases</div>';
     return;
   }
-  dayMap.forEach((day,dk)=>{
-    day.clases=(mbaByDay[dk]||[]).filter(mba=>day.partidos.some(p=>mba.min<p.end&&mba.end>p.min));
-  });
 
-  const pad2=n=>String(n).padStart(2,"0");
+  // ── Función: renderizar un bloque (LV o SAB) ─────────────────
+  // days = [{label, dk, range:{s,e}}]
+  const renderBloque=(days)=>{
+    // range del primer día (todos comparten el mismo rango en cada bloque)
+    const range=days[0].range;
+    const nSlots=(range.e-range.s)/SLOT;
+    // cols: 44px(hora) + 1fr×nDays
+    const colTpl='44px '+days.map(()=>'minmax(90px,1fr)').join(' ');
+    const rowTpl=HDR_H+'px '+Array(nSlots).fill(ROW_H+'px').join(' ');
 
-  // Helper: dispMin/dispEnd para un evento
-  const disp=(min,end)=>{
-    let s=shiftMin(min,tz), en=shiftMin(end||min+60,tz);
-    if(en<=s)en+=1440; return{s,en};
+    let g='';
+
+    // Fila 0: cabeceras
+    g+='<div class="np-g-hora-hdr" style="grid-column:1;grid-row:1">Hora</div>';
+    days.forEach(({label},i)=>{
+      const sep=i>0?' day-sep':'';
+      g+='<div class="np-g-day-hdr'+sep+'" style="grid-column:'+(i+2)+';grid-row:1">'+label+'</div>';
+    });
+
+    // Filas de tiempo + celdas de fondo
+    for(let slot=0;slot<nSlots;slot++){
+      const t=range.s+slot*SLOT;
+      const row=slot+2;
+      const hr=t%60===0;
+      const hrcls=hr?' hr':'';
+      g+='<div class="np-g-time" style="grid-column:1;grid-row:'+row+'">'+fmtTime(t)+'</div>';
+      days.forEach((_,i)=>{
+        const sep=i>0?' day-sep':'';
+        g+='<div class="np-g-cell'+hrcls+sep+'" style="grid-column:'+(i+2)+';grid-row:'+row+'"></div>';
+      });
+    }
+
+    // Eventos — colocar sobre las celdas de fondo
+    days.forEach(({dk,range:r},di)=>{
+      const col=di+2;
+      const allEvs=[];
+
+      // Partidos mundiales del día
+      MUNDIAL_EVENTS.filter(p=>p.dateKey===dk).forEach(p=>{
+        const{s,e2}=toDisp(p.min,p.end);
+        // Recortar al rango del bloque
+        const cs=Math.max(s,r.s), ce=Math.min(e2,r.e);
+        if(ce<=cs)return;
+        const l=(p.loc||'').toLowerCase();
+        const cc=/guadalajara|monterrey|mexico.?city|ciudad.de/i.test(l)?'var(--wc-green)':
+                  /toronto|vancouver/i.test(l)?'var(--wc-red)':'var(--wc-blue)';
+        const lbl=p.label.replace(/[🇠-🇿]/gu,'').trim();
+        const sc=p.finished&&p.homeGoals!=null?' '+p.homeGoals+'–'+p.awayGoals:'';
+        allEvs.push({cs,ce,cc,txt:'⚽ '+lbl+sc,sub:p.ses||'',tipo:'partido'});
+      });
+
+      // Clases/exámenes del día
+      (mbaByDay[dk]||[]).forEach(e=>{
+        const{s,e2}=toDisp(e.min,e.end);
+        const cs=Math.max(s,r.s), ce=Math.min(e2,r.e);
+        if(ce<=cs)return;
+        const cc=(SUBJ[e.subj]&&SUBJ[e.subj].color)||'var(--c-act)';
+        allEvs.push({cs,ce,cc,txt:e.label,sub:e.prof||'',tipo:'clase'});
+      });
+
+      if(!allEvs.length)return;
+
+      // Agrupar eventos por slots que ocupan — para detectar solapamientos
+      // Estrategia: para cada slot, ver qué eventos están activos → si >1 → dividir ancho
+      // Usamos posicionamiento absoluto dentro de cada celda con inset calculado
+
+      // Para cada evento, determinar en qué filas va y cuántos eventos comparten esas filas
+      // Simplificado: para cada par de eventos que se solapan, los ponemos lado a lado
+
+      // Agrupar por slot único y detectar colisiones
+      allEvs.forEach(ev=>{
+        const rowS=Math.round((ev.cs-r.s)/SLOT)+2;
+        const rowE=Math.max(rowS+1,Math.round((ev.ce-r.s)/SLOT)+2);
+        // Eventos que se solapan con este
+        const siblings=allEvs.filter(o=>o!==ev&&o.cs<ev.ce&&o.ce>ev.cs);
+        const total=siblings.length+1;
+        const idx=allEvs.indexOf(ev);
+        const pos=siblings.filter(o=>allEvs.indexOf(o)<idx).length;
+        const pct=100/total;
+        const left=pos*pct, width=pct;
+        const cc=ev.cc;
+        g+='<div style="position:absolute;top:0;left:'+left+'%;width:'+width+'%;grid-column:'+col+';grid-row:'+rowS+'/'+rowE+';z-index:2;padding:1px 2px;box-sizing:border-box;">'+
+           '<div class="np-ev" style="--ev-color:'+cc+';height:100%;box-sizing:border-box">'+
+           '<span class="np-ev-lbl">'+ev.txt+'</span>'+
+           '<span class="np-ev-time">'+fmtTime(ev.cs)+'–'+fmtTime(ev.ce)+'</span>'+
+           '</div></div>';
+      });
+    });
+
+    return '<div class="np-bloque"><div class="np-grid" style="grid-template-columns:'+colTpl+';grid-template-rows:'+rowTpl+'">'+g+'</div></div>';
   };
 
-  // Rango de tiempo de un día
-  const dayRange=([,{partidos,clases}])=>{
-    let mn=1440,mx=0;
-    [...partidos,...clases].forEach(e=>{const{s,en}=disp(e.min,e.end);mn=Math.min(mn,s);mx=Math.max(mx,en);});
-    return{mn,mx};
-  };
+  // ── Renderizar semanas ────────────────────────────────────────
+  const weeks=[...weekClash.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  let outerHtml='<div class="np-wrap">';
 
-  // ── Agrupar días por semana (lunes-domingo) ──────────────────────────────
-  const weekMap=new Map();
-  [...dayMap.entries()].sort((a,b)=>a[0].localeCompare(b[0])).forEach(entry=>{
-    const[y,mo,d]=entry[0].split("-").map(Number);
-    const dt=new Date(y,mo-1,d);
-    const dow=dt.getDay();
-    const mon=new Date(dt); mon.setDate(d+(dow===0?-6:1-dow));
+  weeks.forEach(([wk,{mon}])=>{
+    // Calcular fechas Lunes, Viernes, Sábado de esta semana
+    const lun=new Date(mon);
+    const vie=new Date(mon); vie.setDate(mon.getDate()+4);
+    const sab=new Date(mon); sab.setDate(mon.getDate()+5);
     const sun=new Date(mon); sun.setDate(mon.getDate()+6);
-    const wk=mon.getFullYear()+pad2(mon.getMonth()+1)+pad2(mon.getDate());
-    if(!weekMap.has(wk))weekMap.set(wk,{mon,sun,days:[]});
-    weekMap.get(wk).days.push(entry);
+
+    const fmtHdr=dt=>dt.getDate()+' de '+MN[dt.getMonth()].toLowerCase();
+    const fmtCol=dt=>DW[dt.getDay()]+' '+dt.getDate()+' '+MN[dt.getMonth()].slice(0,3).toLowerCase();
+    const semHdr='Semana del '+fmtHdr(mon).toUpperCase()+' al '+fmtHdr(sun).toUpperCase()+' de '+sun.getFullYear();
+
+    // Bloque LV: Lunes y Viernes, rango 5pm–10pm
+    const lvDays=[
+      {label:fmtCol(lun), dk:dkOf(lun), range:LV},
+      {label:fmtCol(vie), dk:dkOf(vie), range:LV},
+    ];
+    // Bloque SAB: Sábado, rango 8am–5pm
+    const sabDays=[{label:fmtCol(sab), dk:dkOf(sab), range:SA}];
+
+    outerHtml+='<div class="np-sem">'+
+      '<div class="np-sem-hdr">'+semHdr+'</div>'+
+      '<div class="np-bloques">'+
+        renderBloque(lvDays)+
+        renderBloque(sabDays)+
+      '</div>'+
+    '</div>';
   });
 
-  // ── Dentro de cada semana: agrupar días por solapamiento de rango horario ─
-  const groupByTime=days=>{
-    const groups=[];
-    days.forEach(entry=>{
-      const{mn,mx}=dayRange(entry);
-      let found=false;
-      for(const g of groups){
-        if(mn<g.mx&&mx>g.mn){g.days.push(entry);g.mn=Math.min(g.mn,mn);g.mx=Math.max(g.mx,mx);found=true;break;}
-      }
-      if(!found)groups.push({days:[entry],mn,mx});
-    });
-    return groups;
-  };
-
-  // ── Construir HTML ──────────────────────────────────────────────────────
-  const monthNames=typeof MONTHS!=="undefined"?MONTHS:["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-  const dowNames  =typeof DOWL!=="undefined"?DOWL:["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
-
-  const fmtDay=dt=>dt.getDate()+" de "+monthNames[dt.getMonth()].toLowerCase();
-
-  let outerHtml="";
-
-  weekMap.forEach(({mon,sun,days})=>{
-    const wHdr="Semana del "+fmtDay(mon).toUpperCase()+" AL "+fmtDay(sun).toUpperCase()+" DE "+sun.getFullYear();
-    const groups=groupByTime(days);
-
-    let groupsHtml="";
-    groups.forEach(({days:gDays,mn,mx})=>{
-      const slotStart=Math.floor(mn/SLOT)*SLOT-PAD*SLOT;
-      const slotEnd  =Math.ceil(mx/SLOT)*SLOT+PAD*SLOT;
-      const nSlots=(slotEnd-slotStart)/SLOT;
-      const nDays=gDays.length;
-      const colTpl="52px "+Array.from({length:nDays},()=>"minmax(72px,1fr) minmax(72px,1fr)").join(" ");
-      const rowTpl="30px "+Array.from({length:nSlots},()=>SH+"px").join(" ");
-      const toRow=t=>Math.round((t-slotStart)/SLOT)+2;
-
-      let g="";
-      // Header hora
-      g+='<div class="npg-hora-hdr" style="grid-column:1;grid-row:1">Hora</div>';
-      // Headers días
-      gDays.forEach(([dk],i)=>{
-        const[y,mo,d]=dk.split("-").map(Number);
-        const dt=new Date(y,mo-1,d);
-        const lbl=dowNames[dt.getDay()]+" "+d+" "+monthNames[mo-1].slice(0,3).toLowerCase();
-        const col=2+i*2;
-        g+='<div class="npg-day-hdr" style="grid-column:'+col+'/'+(col+2)+';grid-row:1">'+lbl+'</div>';
-      });
-      // Fondo + eje de tiempo
-      for(let s=0;s<nSlots;s++){
-        const t=slotStart+s*SLOT, row=s+2, hr=t%60===0;
-        g+='<div class="npg-time'+(hr?" hr":"")+'" style="grid-column:1;grid-row:'+row+'">'+(hr?fmtTime(t):"")+"</div>";
-        for(let i=0;i<nDays;i++){
-          const cc=2+i*2, pc=3+i*2;
-          const sep=i>0?" day-sep":"";
-          g+='<div class="npg-bg'+(hr?" hr":"")+sep+'" style="grid-column:'+cc+';grid-row:'+row+'"></div>';
-          g+='<div class="npg-bg'+(hr?" hr":" partido-col")+'" style="grid-column:'+pc+';grid-row:'+row+'"></div>';
-        }
-      }
-      // Eventos
-      gDays.forEach(([dk,{partidos,clases}],i)=>{
-        const claseCol=2+i*2, partidoCol=3+i*2;
-        clases.forEach(e=>{
-          const{s,en}=disp(e.min,e.end);
-          const rs=toRow(s),re=Math.max(rs+1,toRow(en));
-          const cc=(SUBJ[e.subj]&&SUBJ[e.subj].color)||"var(--c-act)";
-          g+='<div class="npg-ev" style="grid-column:'+claseCol+';grid-row:'+rs+'/'+re+';--ev-color:'+cc+'">'+
-            '<span class="npg-ev-lbl">'+e.label+'</span>'+
-            '<span class="npg-ev-time">'+fmtTime(s)+'–'+fmtTime(en)+'</span></div>';
-        });
-        partidos.forEach(p=>{
-          const{s,en}=disp(p.min,p.end);
-          const rs=toRow(s),re=Math.max(rs+1,toRow(en));
-          const l=(p.loc||"").toLowerCase();
-          const cc=/guadalajara|monterrey|mexico.?city|ciudad.de/i.test(l)?"var(--wc-green)":
-                   /toronto|vancouver/i.test(l)?"var(--wc-red)":"var(--wc-blue)";
-          const lbl=p.label.replace(/[🇠-🇿]/gu,"").trim();
-          const sc=p.finished&&p.homeGoals!=null?" "+p.homeGoals+"–"+p.awayGoals:"";
-          g+='<div class="npg-ev" style="grid-column:'+partidoCol+';grid-row:'+rs+'/'+re+';--ev-color:'+cc+'">'+
-            '<span class="npg-ev-lbl">⚽ '+lbl+sc+'</span>'+
-            '<span class="npg-ev-time">'+fmtTime(s)+'–'+fmtTime(en)+'</span></div>';
-        });
-      });
-
-      groupsHtml+='<div class="np-view"><div class="npg" style="grid-template-columns:'+colTpl+';grid-template-rows:'+rowTpl+'">'+g+'</div></div>';
-    });
-
-    outerHtml+='<div class="np-week"><div class="np-week-hdr">'+wHdr+'</div><div class="np-week-body">'+groupsHtml+'</div></div>';
-  });
-
+  outerHtml+='</div>';
   calArea.innerHTML=outerHtml;
-  const _pt=document.getElementById("periodTitle");
-  if(_pt)_pt.innerHTML="<b>"+dayMap.size+"</b> "+(dayMap.size===1?"día":"días")+" con partidos que no podrás ver";
+  const _pt=document.getElementById('periodTitle');
+  if(_pt)_pt.innerHTML='<b>'+weeks.length+'</b> '+(weeks.length===1?'semana':'semanas')+' con conflictos';
 }
-
 
 function render(){
   if(!EVENTS.length&&!state.nopuedes){return;}

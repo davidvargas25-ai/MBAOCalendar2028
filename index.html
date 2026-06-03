@@ -169,10 +169,10 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .np-wrap{margin-top:16px;display:flex;flex-direction:column;gap:24px}
 .np-empty-msg{padding:60px 20px;text-align:center;color:var(--ink-soft);font-family:'Fraunces',serif;font-style:italic;font-size:1.05rem}
 .np-sem{display:flex;flex-direction:column;gap:10px}
-.np-sem-hdr{font-size:.72rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);padding:2px 0 4px}
+.np-sem-hdr{font-size:.82rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);padding:6px 0 8px;border-bottom:2px solid var(--ink);margin-bottom:2px}
 .np-bloques{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start}
 .np-bloque{flex:1;min-width:200px;background:#0b1829;border-radius:10px;overflow:hidden}
-.np-grid{display:grid;width:100%}
+.np-grid{display:grid;width:100%;position:relative}
 .np-g-hora-hdr{background:#0b1829;border-bottom:1px solid rgba(255,255,255,.15);border-right:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);padding:5px 4px;box-sizing:border-box;position:sticky;top:0;z-index:3}
 .np-g-day-hdr{background:#0b1829;border-bottom:1px solid rgba(255,255,255,.15);border-left:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:.69rem;font-weight:700;color:rgba(255,255,255,.88);padding:5px 4px;box-sizing:border-box;position:sticky;top:0;z-index:3;text-transform:capitalize}
 .np-g-time{background:#0b1829;border-top:1px solid rgba(255,255,255,.07);border-right:1px solid rgba(255,255,255,.12);display:flex;align-items:flex-start;justify-content:flex-end;padding:2px 6px 0 2px;font-size:.6rem;font-variant-numeric:tabular-nums;color:rgba(255,255,255,.5);box-sizing:border-box}
@@ -934,7 +934,7 @@ function renderNoPuedes(){
         const pct=100/total;
         const left=pos*pct, width=pct;
         const cc=ev.cc;
-        g+='<div style="position:absolute;top:0;left:'+left+'%;width:'+width+'%;grid-column:'+col+';grid-row:'+rowS+'/'+rowE+';z-index:2;padding:1px 2px;box-sizing:border-box;">'+
+        g+='<div style="position:absolute;top:1px;bottom:1px;left:'+left+'%;width:'+width+'%;grid-column:'+col+';grid-row:'+rowS+'/'+rowE+';z-index:2;padding:0 2px;box-sizing:border-box;">'+
            '<div class="np-ev" style="--ev-color:'+cc+';height:100%;box-sizing:border-box">'+
            '<span class="np-ev-lbl">'+ev.txt+'</span>'+
            '<span class="np-ev-time">'+fmtTime(ev.cs)+'–'+fmtTime(ev.ce)+'</span>'+

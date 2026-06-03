@@ -91,10 +91,14 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .nav-btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .nav-btns button{border:1px solid var(--line);background:#fff;width:40px;height:36px;border-radius:9px;font-size:1rem;cursor:pointer;color:var(--ink);transition:.15s}
 .nav-btns button:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
-.today-btn{width:auto!important;padding:0 14px;font-size:.8rem!important;font-weight:600;height:36px}
+.today-btn{width:auto!important;padding:0 9px;font-size:.72rem!important;font-weight:600;height:28px;border-radius:7px}
 .filtros-toggle{display:none}
 .today-btn.active{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}
-#btnMundial.active{background:#8a6000!important;border-color:#8a6000!important;color:#fff!important;}
+#btnMundial.active{background:#8a6000!important;border-color:#8a6000!important;color:#fff!important}
+#btnSoloMundial.active{background:#8a6000!important;border-color:#8a6000!important;color:#fff!important}
+#btnNoPuedes.active{background:#5b4060!important;border-color:#5b4060!important;color:#fff!important}
+.mundial-group{display:inline-flex;align-items:center;gap:4px;border:1.5px solid var(--c-mundial);border-radius:10px;padding:4px 7px;position:relative;margin-left:2px}
+.mundial-group-lbl{position:absolute;top:-8px;left:7px;background:var(--topbar-bg,#fff);padding:0 4px;font-size:.6rem;font-weight:700;color:var(--c-mundial);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;pointer-events:none}
 #btnNoPuedes.active{background:#5b4060!important;border-color:#5b4060!important;color:#fff!important;}
 #btnMundial.active{background:#8a6000!important;border-color:#8a6000!important;color:#fff!important;}
 .view-toggle{margin-left:auto}
@@ -159,9 +163,13 @@ select:disabled{opacity:.5;cursor:not-allowed}
       <button id="btnTasks" class="today-btn" title="Muestra únicamente entregables / tareas">&#9745; Solo entregables</button>
       <button id="btnExams" class="today-btn" title="Muestra únicamente exámenes">&#9998; Solo exámenes</button>
       <button id="btnWeekend" class="today-btn" title="Muestra únicamente sábados y domingos">&#9728; Solo fin de semana</button>
-      <button id="btnMundial" class="today-btn" title="Mostrar/ocultar partidos del Mundial FIFA 2026">⚽ Mundial 2026</button>
-      <button id="btnNoPuedes" class="today-btn" title="Partidos que chocan con tus clases o exámenes">🤡 No podrás ver</button>
       <button id="btnClear" class="today-btn" title="Restablece todos los filtros">&#10005; Limpiar filtros</button>
+      <div class="mundial-group">
+        <span class="mundial-group-lbl">Mundial 2026</span>
+        <button id="btnMundial" class="today-btn" title="Mostrar/ocultar partidos del Mundial FIFA 2026">⚽ Mostrar Partidos</button>
+        <button id="btnSoloMundial" class="today-btn" title="Ver únicamente los partidos del Mundial">🎯 Solo Partidos</button>
+        <button id="btnNoPuedes" class="today-btn" title="Partidos que chocan con tus clases o exámenes">🤡 No podrás ver</button>
+      </div>
     </div>
     <div class="seg view-toggle">
       <button data-view="month" class="active">Mes</button>
@@ -424,13 +432,13 @@ const BASE_TZ=-6;
 const MONTHS=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const DOWS=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 const DOWL=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
-const state={view:"month", tz:-6, weekend:false, task:false, exam:false, mundial:false, nopuedes:false, mundial:false, tzLabel:"Centroam\u00e9rica (UTC\u22126)",
+const state={view:"month", tz:-6, weekend:false, task:false, exam:false, mundial:false, nopuedes:false, soloMundial:false, mundial:false, tzLabel:"Centroam\u00e9rica (UTC\u22126)",
   materias:new Set(), profs:new Set(), days:new Set(), months:new Set(), weeks:new Set()};
 // ===== Memoria de filtros: recuerda lo seleccionado al recargar =====
 const STORE_KEY="mbao2028_filtros";
 function saveState(){
   try{localStorage.setItem(STORE_KEY,JSON.stringify({
-    view:state.view, weekend:state.weekend, task:state.task, exam:state.exam, mundial:state.mundial, nopuedes:state.nopuedes, mundial:state.mundial,
+    view:state.view, weekend:state.weekend, task:state.task, exam:state.exam, mundial:state.mundial, nopuedes:state.nopuedes, soloMundial:state.soloMundial, mundial:state.mundial,
     tzIdx:document.getElementById("fTz").selectedIndex,
     materias:[...state.materias], profs:[...state.profs], days:[...state.days],
     months:[...state.months], weeks:[...state.weeks]
@@ -446,6 +454,7 @@ function loadState(){
     if(typeof s.exam==="boolean")state.exam=s.exam;
     if(typeof s.mundial==="boolean")state.mundial=s.mundial;
     if(typeof s.nopuedes==="boolean")state.nopuedes=s.nopuedes;
+    if(typeof s.soloMundial==="boolean")state.soloMundial=s.soloMundial;
     if(typeof s.mundial==="boolean")state.mundial=s.mundial;
     if(s.tzIdx!=null)state._tzIdx=s.tzIdx;
     if(Array.isArray(s.materias))state.materias=new Set(s.materias);
@@ -457,7 +466,7 @@ function loadState(){
 }
 // Refleja el estado en botones de filtro (entregables, exámenes, fin de semana)
 function syncFilterBtns(){
-  [["btnTasks","task"],["btnExams","exam"],["btnWeekend","weekend"],["btnMundial","mundial"],["btnNoPuedes","nopuedes"]].forEach(([id,key])=>{
+  [["btnTasks","task"],["btnExams","exam"],["btnWeekend","weekend"],["btnMundial","mundial"],["btnSoloMundial","soloMundial"],["btnNoPuedes","nopuedes"]].forEach(([id,key])=>{
     const b=document.getElementById(id);if(b)b.classList.toggle("active",!!state[key]);
   });
 }
@@ -543,6 +552,7 @@ function isDone(e){return DONE.has(taskId(e));}
 function doneBox(e){return '<input type="checkbox" class="taskdone" data-id="'+encodeURIComponent(taskId(e))+'"'+(isDone(e)?" checked":"")+' title="Marcar como completada">';}
 function toggleDone(id,on){if(on)DONE.add(id);else DONE.delete(id);saveDone();const st=calArea?calArea.scrollTop:0;render();if(calArea)calArea.scrollTop=st;}
 function passFilters(e, dt){
+  if(state.soloMundial && e.subj!=="mundial") return false;
   if(state.nopuedes){
     if(e.subj!=="mundial") return false;
     if(!hasClash(e)) return false;
@@ -780,7 +790,7 @@ function toggleExams(){state.exam=!state.exam;if(state.exam)state.task=false;syn
 function toggleWeekend(){state.weekend=!state.weekend;if(state.weekend)state.days.clear();syncFilterBtns();rebuildAllMultis();saveState();render();}
 function clearFilters(){
   state.materias.clear();state.profs.clear();state.days.clear();state.months.clear();state.weeks.clear();
-  state.weekend=false;state.task=false;state.exam=false;state.mundial=false;state.nopuedes=false;state.mundial=false;
+  state.weekend=false;state.task=false;state.exam=false;state.mundial=false;state.nopuedes=false;state.soloMundial=false;state.mundial=false;
   applyStateToControls();saveState();render();requestAnimationFrame(scrollToToday);
 }
 const _bt=document.getElementById("btnTasks");if(_bt)_bt.onclick=toggleTasks;
@@ -800,7 +810,8 @@ async function toggleNoPuedes(){
       else await loadMundial();
     }
   }
-  syncFilterBtns();initFilters();saveState();render();
+  state.months.clear();state.weeks.clear();
+  syncFilterBtns();initFilters();saveState();render();requestAnimationFrame(scrollToToday);
 }
 async function toggleMundial(){
   state.mundial=!state.mundial;syncFilterBtns();
@@ -809,9 +820,24 @@ async function toggleMundial(){
     if(btn){const p=btn.textContent;btn.textContent="⏳ Cargando...";const ok=await loadMundial();btn.textContent=ok?"⚽ Mundial 2026":"⚠️ Error API";}
     else await loadMundial();
   }
-  initFilters();saveState();render();
+  state.months.clear();state.weeks.clear();
+  initFilters();saveState();render();requestAnimationFrame(scrollToToday);
+}
+async function toggleSoloMundial(){
+  state.soloMundial=!state.soloMundial;
+  if(state.soloMundial&&!state.mundial){
+    state.mundial=true;
+    if(MUNDIAL_EVENTS.length===0){
+      const btn=document.getElementById("btnSoloMundial");
+      if(btn){const p=btn.textContent;btn.textContent="⏳ Cargando...";await loadMundial();btn.textContent=p;}
+      else await loadMundial();
+    }
+  }
+  state.months.clear();state.weeks.clear();
+  syncFilterBtns();initFilters();saveState();render();requestAnimationFrame(scrollToToday);
 }
 const _bm=document.getElementById("btnMundial");if(_bm)_bm.onclick=toggleMundial;
+const _bsm=document.getElementById("btnSoloMundial");if(_bsm)_bsm.onclick=toggleSoloMundial;
 loadState();loadData();
 </script>
 </body>

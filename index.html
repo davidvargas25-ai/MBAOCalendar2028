@@ -166,29 +166,27 @@ select:disabled{opacity:.5;cursor:not-allowed}
 }
 
 /* ── No Podrás Ver: vista semanal fija ── */
-.np-wrap{margin-top:16px;display:flex;flex-direction:column;gap:24px;background:#0b1829;border-radius:12px;padding:12px}
-.np-empty-msg{padding:60px 20px;text-align:center;color:var(--ink-soft);font-family:'Fraunces',serif;font-style:italic;font-size:1.05rem}
-.np-sem{display:flex;flex-direction:column;gap:10px;background:#0b1829}
-.np-sem-hdr{font-size:.82rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);padding:6px 0 8px;border-bottom:2px solid var(--ink);margin-bottom:2px}
-.np-wrap{background:#0b1829;border-radius:12px;padding:12px}
-.np-sem{background:#0b1829}
-.np-bloques{display:grid;grid-template-columns:2fr 1fr;gap:10px;background:#0b1829}
-.np-bloque{background:#0b1829;border-radius:8px;overflow:hidden;min-width:0}
+.np-wrap{margin-top:16px;display:flex;flex-direction:column;gap:24px;background:var(--bg1);border-radius:12px;padding:12px}
+.np-empty-msg{padding:60px 20px;text-align:center;color:var(--on-dark-soft);font-family:'Fraunces',serif;font-style:italic;font-size:1.05rem}
+.np-sem{display:flex;flex-direction:column;gap:10px;background:var(--bg1)}
+.np-sem-hdr{font-size:.82rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--on-dark);padding:6px 0 8px;border-bottom:2px solid var(--on-dark-soft);margin-bottom:2px}
+.np-bloques{display:grid;grid-template-columns:2fr 1fr;gap:10px;background:var(--bg1)}
+.np-bloque{background:var(--bg1);border-radius:8px;overflow:hidden;min-width:0}
 .np-grid{display:grid;width:100%;position:relative}
-.np-g-hora-hdr{background:#0b1829;border-bottom:1px solid rgba(255,255,255,.15);border-right:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);padding:5px 4px;box-sizing:border-box;position:sticky;top:0;z-index:3}
-.np-g-day-hdr{background:#0b1829;border-bottom:1px solid rgba(255,255,255,.15);border-left:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:.69rem;font-weight:700;color:rgba(255,255,255,.88);padding:5px 4px;box-sizing:border-box;position:sticky;top:0;z-index:3;text-transform:capitalize}
-.np-g-time{background:#0b1829;border-top:1px solid rgba(255,255,255,.07);border-right:1px solid rgba(255,255,255,.12);display:flex;align-items:flex-start;justify-content:flex-end;padding:2px 6px 0 2px;font-size:.6rem;font-variant-numeric:tabular-nums;color:rgba(255,255,255,.5);box-sizing:border-box}
-.np-g-cell{background:#0b1829;border-top:1px solid rgba(255,255,255,.07);border-left:1px solid rgba(255,255,255,.08);box-sizing:border-box;overflow:hidden}
-.np-g-cell.hr{border-top:1px solid rgba(255,255,255,.18)}
-.np-g-cell.day-sep{border-left:2px solid rgba(255,255,255,.18)}
-.np-g-sub-hdr{background:#0b1829;border-top:1px solid rgba(255,255,255,.08);border-left:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:rgba(255,255,255,.35);box-sizing:border-box}
-.np-g-sub-hdr.day-sep{border-left:2px solid rgba(255,255,255,.18)}
-.np-g-time{background:#0b1829;border-top:1px solid rgba(255,255,255,.07);border-right:1px solid rgba(255,255,255,.12);display:flex;align-items:flex-start;justify-content:flex-end;padding:2px 6px 0 2px;font-size:.6rem;font-variant-numeric:tabular-nums;color:rgba(255,255,255,.5);box-sizing:border-box}
-.np-g-time.hr{color:rgba(255,255,255,.75);font-weight:600;border-top:1px solid rgba(255,255,255,.18)}
-.np-ev-wrap{position:absolute;inset:1px 2px;display:flex;gap:2px;overflow:hidden}
-.np-ev{border-radius:4px;padding:2px 5px;display:flex;flex-direction:column;gap:1px;border-left:3px solid var(--ev-color);background:color-mix(in srgb,var(--ev-color) 40%,#0b1829);overflow:hidden;min-width:0;align-self:stretch}
-.np-ev-lbl{font-size:.67rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
-.np-ev-time{font-size:.58rem;color:rgba(255,255,255,.6);white-space:nowrap;font-variant-numeric:tabular-nums}
+.np-g-hora-hdr{background:var(--bg2);border-bottom:1px solid rgba(232,238,251,.2);border-right:1px solid rgba(232,238,251,.15);display:flex;align-items:center;justify-content:center;font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--on-dark-soft);padding:5px 4px;box-sizing:border-box;position:sticky;top:0;z-index:3}
+.np-g-day-hdr{background:var(--bg2);border-bottom:1px solid rgba(232,238,251,.2);border-left:1px solid rgba(232,238,251,.12);display:flex;align-items:center;justify-content:center;font-size:.69rem;font-weight:700;color:var(--on-dark);padding:5px 4px;box-sizing:border-box;position:sticky;top:0;z-index:3;text-transform:capitalize}
+.np-g-day-hdr.day-sep{border-left:2px solid rgba(232,238,251,.25)}
+.np-g-time{background:var(--bg1);border-top:1px solid rgba(232,238,251,.1);border-right:1px solid rgba(232,238,251,.15);display:flex;align-items:flex-start;justify-content:flex-end;padding:2px 6px 0 2px;font-size:.6rem;font-variant-numeric:tabular-nums;color:var(--on-dark-soft);box-sizing:border-box}
+.np-g-time.hr{color:var(--on-dark);font-weight:600;border-top:1px solid rgba(232,238,251,.22)}
+.np-g-cell{background:var(--bg1);border-top:1px solid rgba(232,238,251,.1);border-left:1px solid rgba(232,238,251,.08);box-sizing:border-box;overflow:hidden}
+.np-g-cell.hr{border-top:1px solid rgba(232,238,251,.22)}
+.np-g-cell.day-sep{border-left:2px solid rgba(232,238,251,.25)}
+.np-g-sub-hdr{background:var(--bg2);border-top:1px solid rgba(232,238,251,.1);border-left:1px solid rgba(232,238,251,.08);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--on-dark-soft);box-sizing:border-box}
+.np-g-sub-hdr.day-sep{border-left:2px solid rgba(232,238,251,.25)}
+.np-ev-wrap{display:none}
+.np-ev{border-radius:4px;padding:2px 5px;display:flex;flex-direction:column;gap:1px;border-left:3px solid var(--ev-color);background:color-mix(in srgb,var(--ev-color) 22%,var(--bg1));overflow:hidden;min-width:0;align-self:stretch}
+.np-ev-lbl{font-size:.67rem;font-weight:700;color:var(--on-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.np-ev-time{font-size:.58rem;color:var(--on-dark-soft);white-space:nowrap;font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>

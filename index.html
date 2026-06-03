@@ -212,58 +212,111 @@ const SUBJ = {
 // ===== Capa de datos en vivo: lee la hoja publicada de Google Sheets =====
 const CSV_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vQq3sXfPTvpFc29omeHSN6DL-IvhUlzucQe835MoL02vOLoa2rz1tF2IlNmw6bxP6PpYXDFpmrTMl6W/pub?gid=73764161&single=true&output=csv";
 
-// ===== Mundial 2026 — API-Football en vivo =====
-const RAPIDAPI_KEY="909957ed37msh6435a8c826fc764p1a8a77jsn4d8cd91b4f57";
-const MUNDIAL_API_URL="https://api-football-v1.p.rapidapi.com/v3/fixtures?league=1&season=2026";
-const MUNDIAL_CACHE_KEY="mbao2028_mundial_v1";
-const MUNDIAL_CACHE_TTL=6*60*60*1000;
-let MUNDIAL_EVENTS=[];
-const TEAM_MAP={"Mexico":"🇲🇽 México","South Africa":"🇿🇦 Sudáfrica","South Korea":"🇰🇷 Corea del Sur","Czechia":"🇨🇿 Chequia","Czech Republic":"🇨🇿 Chequia","Canada":"🇨🇦 Canadá","Bosnia":"🇧🇦 Bosnia","Bosnia And Herzegovina":"🇧🇦 Bosnia","Qatar":"🇶🇦 Catar","Switzerland":"🇨🇭 Suiza","Brazil":"🇧🇷 Brasil","Morocco":"🇲🇦 Marruecos","Haiti":"🇭🇹 Haití","Scotland":"🏴󠁧󠁢󠁳󠁣󠁴󠁿 Escocia","USA":"🇺🇸 EE.UU.","United States":"🇺🇸 EE.UU.","Paraguay":"🇵🇾 Paraguay","Australia":"🇦🇺 Australia","Turkey":"🇹🇷 Turquía","Turkiye":"🇹🇷 Turquía","Germany":"🇩🇪 Alemania","Curacao":"🇨🇼 Curazao","Ivory Coast":"🇨🇮 Costa de Marfil","Cote d'Ivoire":"🇨🇮 Costa de Marfil","Ecuador":"🇪🇨 Ecuador","Netherlands":"🇳🇱 Países Bajos","Japan":"🇯🇵 Japón","Sweden":"🇸🇪 Suecia","Tunisia":"🇹🇳 Túnez","Belgium":"🇧🇪 Bélgica","Egypt":"🇪🇬 Egipto","Iran":"🇮🇷 Irán","New Zealand":"🇳🇿 Nueva Zelanda","Spain":"🇪🇸 España","Cape Verde":"🇨🇻 Cabo Verde","Saudi Arabia":"🇸🇦 Arabia Saudita","Uruguay":"🇺🇾 Uruguay","France":"🇫🇷 Francia","Senegal":"🇸🇳 Senegal","Iraq":"🇮🇶 Irak","Norway":"🇳🇴 Noruega","Argentina":"🇦🇷 Argentina","Algeria":"🇩🇿 Argelia","Austria":"🇦🇹 Austria","Jordan":"🇯🇴 Jordania","Portugal":"🇵🇹 Portugal","DR Congo":"🇨🇩 RD Congo","Congo DR":"🇨🇩 RD Congo","Uzbekistan":"🇺🇿 Uzbekistán","Colombia":"🇨🇴 Colombia","England":"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra","Croatia":"🇭🇷 Croacia","Ghana":"🇬🇭 Ghana","Panama":"🇵🇦 Panamá"};
-const ROUND_MAP={"Group Stage - 1":"Grupo · J1","Group Stage - 2":"Grupo · J2","Group Stage - 3":"Grupo · J3","Round of 32":"16vos de final","Round of 16":"8vos de final","Quarter-finals":"Cuartos de final","Semi-finals":"Semifinal","3rd Place Final":"Tercer lugar","Final":"Final"};
-function teamLabel(n){return TEAM_MAP[n]||("⚽ "+n);}
-function roundLabel(r){return ROUND_MAP[r]||r;}
-function isoToCR(iso){
-  const utcMs=new Date(iso).getTime();if(isNaN(utcMs))return null;
-  const crMs=utcMs-6*3600000;const d=new Date(crMs);
-  const y=d.getUTCFullYear(),mo=d.getUTCMonth(),dd=d.getUTCDate(),h=d.getUTCHours(),mi=d.getUTCMinutes();
-  const pad=n=>String(n).padStart(2,"0");
-  return{y,m:mo,d:dd,dateKey:`${y}-${pad(mo+1)}-${pad(dd)}`,min:h*60+mi};
+// ===== Mundial 2026 — openfootball (gratis, sin API key, actualiza resultados) =====
+// Fuente: https://github.com/openfootball/worldcup.json  — sin límites, sin auth
+const MUNDIAL_URL = "https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json";
+const MUNDIAL_CACHE_KEY = "mbao2028_mundial_v3";
+const MUNDIAL_CACHE_TTL = 2 * 60 * 60 * 1000; // 2 horas
+let MUNDIAL_EVENTS = [];
+
+const TEAM_MAP = {
+  "Mexico":"🇲🇽 México","South Africa":"🇿🇦 Sudáfrica","South Korea":"🇰🇷 Corea del Sur",
+  "Czech Republic":"🇨🇿 Chequia","Czechia":"🇨🇿 Chequia",
+  "Canada":"🇨🇦 Canadá","Bosnia and Herzegovina":"🇧🇦 Bosnia y Herz.","Bosnia":"🇧🇦 Bosnia y Herz.",
+  "Qatar":"🇶🇦 Catar","Switzerland":"🇨🇭 Suiza",
+  "Brazil":"🇧🇷 Brasil","Morocco":"🇲🇦 Marruecos","Haiti":"🇭🇹 Haití","Scotland":"🏴󠁧󠁢󠁳󠁣󠁴󠁿 Escocia",
+  "United States":"🇺🇸 EE.UU.","USA":"🇺🇸 EE.UU.",
+  "Paraguay":"🇵🇾 Paraguay","Australia":"🇦🇺 Australia",
+  "Turkey":"🇹🇷 Turquía","Türkiye":"🇹🇷 Turquía",
+  "Germany":"🇩🇪 Alemania","Curacao":"🇨🇼 Curazao","Curaçao":"🇨🇼 Curazao",
+  "Ivory Coast":"🇨🇮 C. de Marfil","Côte d'Ivoire":"🇨🇮 C. de Marfil",
+  "Ecuador":"🇪🇨 Ecuador","Netherlands":"🇳🇱 Países Bajos",
+  "Japan":"🇯🇵 Japón","Sweden":"🇸🇪 Suecia","Tunisia":"🇹🇳 Túnez",
+  "Belgium":"🇧🇪 Bélgica","Egypt":"🇪🇬 Egipto","Iran":"🇮🇷 Irán",
+  "New Zealand":"🇳🇿 Nueva Zelanda","Spain":"🇪🇸 España",
+  "Cape Verde":"🇨🇻 Cabo Verde","Saudi Arabia":"🇸🇦 Arabia Saudita",
+  "Uruguay":"🇺🇾 Uruguay","France":"🇫🇷 Francia","Senegal":"🇸🇳 Senegal",
+  "Iraq":"🇮🇶 Irak","Norway":"🇳🇴 Noruega",
+  "Argentina":"🇦🇷 Argentina","Algeria":"🇩🇿 Argelia",
+  "Austria":"🇦🇹 Austria","Jordan":"🇯🇴 Jordania",
+  "Portugal":"🇵🇹 Portugal","DR Congo":"🇨🇩 RD Congo","Congo DR":"🇨🇩 RD Congo",
+  "Uzbekistan":"🇺🇿 Uzbekistán","Colombia":"🇨🇴 Colombia",
+  "England":"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra","Croatia":"🇭🇷 Croacia",
+  "Ghana":"🇬🇭 Ghana","Panama":"🇵🇦 Panamá"
+};
+function teamLabel(n){ return TEAM_MAP[n] || ("⚽ "+(n||"TBD")); }
+
+// Convierte hora local con offset UTC → minutos en hora Costa Rica (UTC-6)
+// Ejemplo: "12:00 UTC-4" → CR = 12:00 - 2h = 10:00 = 600
+// Fórmula: CR_min = local_min - (tzOffset + 6)*60
+function timeToCR(timeStr, dateStr){
+  if(!timeStr) return null;
+  const m=timeStr.match(/^(\d{1,2}):(\d{2})(?:\s+UTC([+-]\d+(?:\.\d+)?))?/);
+  if(!m) return null;
+  const localMin = +m[1]*60 + +m[2];
+  const tz = m[3]!==undefined ? +m[3] : -6; // default UTC-6 si no especifica
+  let crMin = localMin - (tz + 6)*60;
+  // Ajuste de fecha si cruza medianoche
+  let dayAdj = 0;
+  if(crMin < 0)    { crMin += 1440; dayAdj = -1; }
+  if(crMin >= 1440){ crMin -= 1440; dayAdj = +1; }
+  let dateKey = dateStr;
+  if(dayAdj !== 0){
+    const [y,mo,d]=dateStr.split("-").map(Number);
+    const dt=new Date(y,mo-1,d+dayAdj);
+    const pad=n=>String(n).padStart(2,"0");
+    dateKey=dt.getFullYear()+"-"+pad(dt.getMonth()+1)+"-"+pad(dt.getDate());
+  }
+  return {crMin, dateKey};
 }
-function parseFixtures(raw){
-  return raw.map(f=>{
-    const cr=isoToCR(f.fixture.date);if(!cr)return null;
-    const home=f.teams.home.name,away=f.teams.away.name;
-    const isKnown=n=>!/winner|loser|tbd/i.test(n);
-    const label=isKnown(home)&&isKnown(away)?teamLabel(home)+" vs "+teamLabel(away):"⚽ "+home+" vs "+away;
-    const ses=roundLabel(f.league.round||"");
-    const loc=(f.fixture.venue&&f.fixture.venue.name?f.fixture.venue.name+", ":"")+(f.fixture.venue&&f.fixture.venue.city?f.fixture.venue.city:"");
-    const status=(f.fixture.status&&f.fixture.status.short)||"NS";
-    const finished=["FT","AET","PEN"].includes(status);
-    const live=["1H","2H","HT","ET","BT","P"].includes(status);
-    const homeGoals=(f.goals&&f.goals.home!=null)?f.goals.home:null;
-    const awayGoals=(f.goals&&f.goals.away!=null)?f.goals.away:null;
-    return{y:cr.y,m:cr.m,d:cr.d,dateKey:cr.dateKey,min:cr.min,end:cr.min+120,subj:"mundial",
-      label,ses,loc,tipo:"Partido",prof:"—",status,finished,live,homeGoals,awayGoals};
+
+function parseOpenfootball(data){
+  return (data.matches||[]).map(m=>{
+    const tr = timeToCR(m.time, m.date);
+    if(!tr) return null;
+    const {crMin, dateKey} = tr;
+    const [y,mo,d] = dateKey.split("-").map(Number);
+    const home = teamLabel(m.team1), away = teamLabel(m.team2||"");
+    const finished = m.score1!=null && m.score1!==undefined;
+    const homeGoals = finished ? m.score1 : null;
+    const awayGoals = finished ? m.score2 : null;
+    const label = finished
+      ? home+"  "+homeGoals+" - "+awayGoals+"  "+away+"  ✅"
+      : (m.team2 ? home+" vs "+away : home+" vs ???");
+    const ses = m.group||m.round||"";
+    const loc = m.ground||"";
+    return{y,m:mo-1,d,dateKey,min:crMin,end:crMin+120,subj:"mundial",
+      label,ses,loc,tipo:"Partido",prof:"\u2014",
+      status:finished?"FT":"NS",finished,live:false,homeGoals,awayGoals};
   }).filter(Boolean);
 }
+
 async function loadMundial(forceRefresh=false){
   if(!forceRefresh){
-    try{const c=JSON.parse(localStorage.getItem(MUNDIAL_CACHE_KEY)||"null");
+    try{
+      const c=JSON.parse(localStorage.getItem(MUNDIAL_CACHE_KEY)||"null");
       if(c&&(Date.now()-c.ts)<MUNDIAL_CACHE_TTL&&Array.isArray(c.events)&&c.events.length>0){
-        MUNDIAL_EVENTS=c.events;invalidateClashCache();return true;}}catch(e){}
+        MUNDIAL_EVENTS=c.events;invalidateClashCache();return true;
+      }
+    }catch(e){}
   }
   try{
-    const res=await fetch(MUNDIAL_API_URL,{"headers":{"X-RapidAPI-Key":RAPIDAPI_KEY,"X-RapidAPI-Host":"api-football-v1.p.rapidapi.com"}});
-    if(!res.ok)throw new Error("HTTP "+res.status);
+    const res=await fetch(MUNDIAL_URL+"?_="+Date.now(),{cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP "+res.status);
     const data=await res.json();
-    if(!data.response||!data.response.length)throw new Error("Sin datos");
-    MUNDIAL_EVENTS=parseFixtures(data.response);invalidateClashCache();
+    MUNDIAL_EVENTS=parseOpenfootball(data);
+    if(!MUNDIAL_EVENTS.length) throw new Error("Sin partidos en la respuesta");
+    invalidateClashCache();
     localStorage.setItem(MUNDIAL_CACHE_KEY,JSON.stringify({ts:Date.now(),events:MUNDIAL_EVENTS}));
     return true;
   }catch(err){
-    try{const c=JSON.parse(localStorage.getItem(MUNDIAL_CACHE_KEY)||"null");
-      if(c&&Array.isArray(c.events)&&c.events.length>0){MUNDIAL_EVENTS=c.events;invalidateClashCache();return true;}}catch(e){}
-    console.error("Mundial API:",err.message);return false;
+    try{
+      const c=JSON.parse(localStorage.getItem(MUNDIAL_CACHE_KEY)||"null");
+      if(c&&Array.isArray(c.events)&&c.events.length>0){
+        MUNDIAL_EVENTS=c.events;invalidateClashCache();return true;
+      }
+    }catch(e){}
+    console.error("Mundial:",err.message);return false;
   }
 }
 

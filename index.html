@@ -665,7 +665,7 @@ function evHTML(e){
     if(e.loc) meta.push(e.loc);
     if(scoreLine) meta.push(scoreLine);
     if(clash) meta.push("💔 <b>Tienes clase/examen</b>");
-    return '<div class="ev ev-mundial" style="--cc:'+cc+'" title="'+rawLbl.replace(/"/g,"&quot;")+'">'+
+    return '<div class="ev ev-mundial'+(clash?' ev-nopuedes':'')+'" style="--cc:'+cc+'" title="'+rawLbl.replace(/"/g,"&quot;")+'">'+
       '<span class="t">'+timeRange(e)+(cross?' <span class="xday">(día sig.)</span>':'')+'</span>'+
       '<span class="n">'+displayLabel+'</span>'+
       (meta.length?'<span class="meta">'+meta.join(" · ")+'</span>':'')+

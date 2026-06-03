@@ -31,8 +31,18 @@
   --c-orgind:#1f6f8c;
   --c-grupoest:#1f9cc4;
   --c-act:#8a857c;
-  --c-mundial:#c79500;
-  --c-clash:#5b4060;
+  --wc-gold:#c9a227;
+  --wc-gold-dk:#96780f;
+  --wc-black:#0d1117;
+  --wc-offwhite:#f0ede6;
+  --wc-blue:#1a4fa0;
+  --wc-blue-lt:rgba(26,79,160,.13);
+  --wc-green:#1a7a3c;
+  --wc-green-lt:rgba(26,122,60,.13);
+  --wc-red:#b52020;
+  --wc-red-lt:rgba(181,32,32,.12);
+  --c-mundial:var(--wc-gold);
+  --c-clash:var(--wc-red);
 }
 *{box-sizing:border-box}
 body{margin:0;background:
@@ -91,16 +101,17 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .nav-btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .nav-btns button{border:1px solid var(--line);background:#fff;width:40px;height:36px;border-radius:9px;font-size:1rem;cursor:pointer;color:var(--ink);transition:.15s}
 .nav-btns button:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
-.today-btn{width:auto!important;padding:0 9px;font-size:.72rem!important;font-weight:600;height:28px;border-radius:7px}
+.today-btn{width:auto!important;padding:0 9px;font-size:.71rem!important;font-weight:600;height:24px;border-radius:6px}
 .filtros-toggle{display:none}
 .today-btn.active{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}
-#btnMundial.active{background:#8a6000!important;border-color:#8a6000!important;color:#fff!important}
-#btnSoloMundial.active{background:#8a6000!important;border-color:#8a6000!important;color:#fff!important}
-#btnNoPuedes.active{background:#5b4060!important;border-color:#5b4060!important;color:#fff!important}
-.mundial-group{display:inline-flex;align-items:center;gap:4px;border:1.5px solid var(--c-mundial);border-radius:10px;padding:4px 7px;position:relative;margin-left:2px}
-.mundial-group-lbl{position:absolute;top:-8px;left:7px;background:var(--topbar-bg,#fff);padding:0 4px;font-size:.6rem;font-weight:700;color:var(--c-mundial);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;pointer-events:none}
-#btnNoPuedes.active{background:#5b4060!important;border-color:#5b4060!important;color:#fff!important;}
-#btnMundial.active{background:#8a6000!important;border-color:#8a6000!important;color:#fff!important;}
+/* ── Mundial group ── */
+.mundial-group{display:inline-flex;align-items:center;gap:4px;background:var(--wc-black);border:1.5px solid var(--wc-gold);border-radius:10px;padding:5px 9px 5px 9px;position:relative;margin-left:4px}
+.mundial-group-lbl{position:absolute;top:-8px;left:8px;background:var(--wc-black);padding:0 5px;font-size:.58rem;font-weight:800;color:var(--wc-gold);letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;pointer-events:none}
+.mundial-group .today-btn{color:var(--wc-offwhite)!important;border-color:rgba(201,162,39,.35)!important;background:rgba(255,255,255,.06)!important;height:22px}
+.mundial-group .today-btn:hover{background:rgba(201,162,39,.18)!important;border-color:var(--wc-gold)!important}
+#btnMundial.active{background:var(--wc-gold)!important;border-color:var(--wc-gold-dk)!important;color:var(--wc-black)!important;font-weight:700!important}
+#btnSoloMundial.active{background:var(--wc-blue)!important;border-color:var(--wc-blue)!important;color:#fff!important}
+#btnNoPuedes.active{background:var(--wc-red)!important;border-color:var(--wc-red)!important;color:#fff!important}
 .view-toggle{margin-left:auto}
 /* ===== Rejilla de 7 columnas por día de la semana ===== */
 .weekhead{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:0 0 6px;padding:0 2px}
@@ -228,31 +239,31 @@ const MUNDIAL_CACHE_TTL = 2 * 60 * 60 * 1000; // 2 horas
 let MUNDIAL_EVENTS = [];
 
 const TEAM_MAP = {
-  "Mexico":"🇲🇽 México","South Africa":"🇿🇦 Sudáfrica","South Korea":"🇰🇷 Corea del Sur",
-  "Czech Republic":"🇨🇿 Chequia","Czechia":"🇨🇿 Chequia",
-  "Canada":"🇨🇦 Canadá","Bosnia and Herzegovina":"🇧🇦 Bosnia y Herz.","Bosnia":"🇧🇦 Bosnia y Herz.",
-  "Qatar":"🇶🇦 Catar","Switzerland":"🇨🇭 Suiza",
-  "Brazil":"🇧🇷 Brasil","Morocco":"🇲🇦 Marruecos","Haiti":"🇭🇹 Haití","Scotland":"🏴󠁧󠁢󠁳󠁣󠁴󠁿 Escocia",
-  "United States":"🇺🇸 EE.UU.","USA":"🇺🇸 EE.UU.",
-  "Paraguay":"🇵🇾 Paraguay","Australia":"🇦🇺 Australia",
-  "Turkey":"🇹🇷 Turquía","Türkiye":"🇹🇷 Turquía",
-  "Germany":"🇩🇪 Alemania","Curacao":"🇨🇼 Curazao","Curaçao":"🇨🇼 Curazao",
-  "Ivory Coast":"🇨🇮 C. de Marfil","Côte d'Ivoire":"🇨🇮 C. de Marfil",
-  "Ecuador":"🇪🇨 Ecuador","Netherlands":"🇳🇱 Países Bajos",
-  "Japan":"🇯🇵 Japón","Sweden":"🇸🇪 Suecia","Tunisia":"🇹🇳 Túnez",
-  "Belgium":"🇧🇪 Bélgica","Egypt":"🇪🇬 Egipto","Iran":"🇮🇷 Irán",
-  "New Zealand":"🇳🇿 Nueva Zelanda","Spain":"🇪🇸 España",
-  "Cape Verde":"🇨🇻 Cabo Verde","Saudi Arabia":"🇸🇦 Arabia Saudita",
-  "Uruguay":"🇺🇾 Uruguay","France":"🇫🇷 Francia","Senegal":"🇸🇳 Senegal",
-  "Iraq":"🇮🇶 Irak","Norway":"🇳🇴 Noruega",
-  "Argentina":"🇦🇷 Argentina","Algeria":"🇩🇿 Argelia",
-  "Austria":"🇦🇹 Austria","Jordan":"🇯🇴 Jordania",
-  "Portugal":"🇵🇹 Portugal","DR Congo":"🇨🇩 RD Congo","Congo DR":"🇨🇩 RD Congo",
-  "Uzbekistan":"🇺🇿 Uzbekistán","Colombia":"🇨🇴 Colombia",
-  "England":"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra","Croatia":"🇭🇷 Croacia",
-  "Ghana":"🇬🇭 Ghana","Panama":"🇵🇦 Panamá"
-};
-function teamLabel(n){ return TEAM_MAP[n] || ("⚽ "+(n||"TBD")); }
+  "Mexico":"MEX","South Africa":"RSA","South Korea":"KOR",
+  "Czech Republic":"CZE","Czechia":"CZE",
+  "Canada":"CAN","Bosnia and Herzegovina":"BIH","Bosnia":"BIH",
+  "Qatar":"QAT","Switzerland":"SUI",
+  "Brazil":"BRA","Morocco":"MAR","Haiti":"HAI","Scotland":"SCO",
+  "United States":"USA","USA":"USA",
+  "Paraguay":"PAR","Australia":"AUS",
+  "Turkey":"TUR","Türkiye":"TUR",
+  "Germany":"GER","Curacao":"CUW","Curaçao":"CUW",
+  "Ivory Coast":"CIV","Côte d'Ivoire":"CIV",
+  "Ecuador":"ECU","Netherlands":"NED",
+  "Japan":"JPN","Sweden":"SWE","Tunisia":"TUN",
+  "Belgium":"BEL","Egypt":"EGY","Iran":"IRN",
+  "New Zealand":"NZL","Spain":"ESP",
+  "Cape Verde":"CPV","Saudi Arabia":"KSA",
+  "Uruguay":"URU","France":"FRA","Senegal":"SEN",
+  "Iraq":"IRQ","Norway":"NOR",
+  "Argentina":"ARG","Algeria":"ALG",
+  "Austria":"AUT","Jordan":"JOR",
+  "Portugal":"POR","DR Congo":"COD","Congo DR":"COD",
+  "Uzbekistan":"UZB","Colombia":"COL",
+  "England":"ENG","Croatia":"CRO",
+  "Ghana":"GHA","Panama":"PAN"
+}
+function teamLabel(n){ return TEAM_MAP[n] || (n||"TBD").slice(0,3).toUpperCase(); }
 
 // Convierte hora local con offset UTC → minutos en hora Costa Rica (UTC-6)
 // Ejemplo: "12:00 UTC-4" → CR = 12:00 - 2h = 10:00 = 600
@@ -579,14 +590,20 @@ function evHTML(e){
   const c=SUBJ[e.subj].color;
   if(e.subj==="mundial"){
     const clash=hasClash(e);
-    const cc=clash?"var(--c-clash)":c;
+    // Color según estado WC2026: rojo=clash/alerta, verde=finalizado, oro=en vivo, azul=próximo
+    let cc;
+    if(clash)       cc="var(--wc-red)";
+    else if(e.live) cc="var(--wc-gold)";
+    else if(e.finished) cc="var(--wc-green)";
+    else            cc="var(--wc-blue)";
+    // Score display
     let scoreLine="";
-    if(e.finished&&e.homeGoals!=null) scoreLine="✅ "+e.homeGoals+" – "+e.awayGoals+" (Final)";
-    else if(e.live&&e.homeGoals!=null) scoreLine="🔴 "+e.homeGoals+" – "+e.awayGoals+" (En vivo)";
+    if(e.finished&&e.homeGoals!=null) scoreLine="✅ "+e.homeGoals+" – "+e.awayGoals;
+    else if(e.live&&e.homeGoals!=null) scoreLine="🔴 EN VIVO "+e.homeGoals+" – "+e.awayGoals;
     const displayLabel=(clash?"🤡 ":"")+e.label;
     let meta=[];
-    if(e.ses) meta.push("<b>Ronda</b> "+e.ses);
-    if(e.loc) meta.push("<b>Estadio</b> "+e.loc);
+    if(e.ses) meta.push(e.ses);
+    if(e.loc) meta.push(e.loc);
     if(scoreLine) meta.push(scoreLine);
     if(clash) meta.push("💔 <b>Tienes clase/examen</b>");
     const cross=e.dispMin>=1440;

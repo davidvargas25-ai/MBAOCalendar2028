@@ -130,6 +130,8 @@ select:disabled{opacity:.5;cursor:not-allowed}
 /* ===== Cajas de evento (compactas) ===== */
 .ev{border-left:3px solid var(--cc,var(--c-act));background:color-mix(in srgb,var(--cc,var(--c-act)) 12%,#fff);border-radius:6px;padding:5px 7px;display:flex;flex-direction:column;gap:1px}
 .ev.ev-mundial{background:color-mix(in srgb,var(--cc) 28%,#fff)}
+.ev.ev-nopuedes{background:#111!important;border-left-color:#fff!important}
+.ev.ev-nopuedes .t,.ev.ev-nopuedes .n,.ev.ev-nopuedes .meta{color:#fff!important}
 .ev .t{font-weight:700;color:var(--cc);font-variant-numeric:tabular-nums;font-size:.72rem;letter-spacing:.01em}
 .ev .n{color:var(--ink);font-weight:600;font-size:.76rem;line-height:1.2;overflow-wrap:anywhere;white-space:normal}
 .ev .ti{color:var(--ink);font-weight:500;font-size:.72rem;line-height:1.2;overflow-wrap:anywhere;white-space:normal}
@@ -633,13 +635,36 @@ function evHTML(e){
     let scoreLine="";
     if(e.finished&&e.homeGoals!=null) scoreLine="✅ "+e.homeGoals+" – "+e.awayGoals;
     else if(e.live&&e.homeGoals!=null) scoreLine="🔴 EN VIVO "+e.homeGoals+" – "+e.awayGoals;
+    const cross=e.dispMin>=1440;
+
+    // Modo "No podrás ver": caja negra, texto blanco, info del clash al final
+    if(state.nopuedes){
+      const clashEvs=EVENTS.filter(c=>
+        c.dateKey===e.dateKey&&c.subj!=="mundial"&&
+        e.min<(c.end||c.min+60)&&e.end>c.min
+      );
+      let meta=[];
+      if(e.ses) meta.push(e.ses);
+      if(e.loc) meta.push(e.loc);
+      if(scoreLine) meta.push(scoreLine);
+      clashEvs.forEach(c=>{
+        const cs=shiftMin(c.min,state.tz), ce=shiftMin(c.end||c.min+60,state.tz);
+        meta.push('💔 <b>'+c.label+'</b> '+fmtTime(cs)+'–'+fmtTime(ce));
+      });
+      return '<div class="ev ev-mundial ev-nopuedes" title="'+rawLbl.replace(/"/g,"&quot;")+'">'+
+        '<span class="t">'+timeRange(e)+(cross?' <span class="xday">(día sig.)</span>':'')+'</span>'+
+        '<span class="n">🤡 '+rawLbl+'</span>'+
+        (meta.length?'<span class="meta">'+meta.join(' · ')+'</span>':'')+
+        '</div>';
+    }
+
+    // Vista normal
     const displayLabel=(clash?"🤡 ":"")+rawLbl;
     let meta=[];
     if(e.ses) meta.push(e.ses);
     if(e.loc) meta.push(e.loc);
     if(scoreLine) meta.push(scoreLine);
     if(clash) meta.push("💔 <b>Tienes clase/examen</b>");
-    const cross=e.dispMin>=1440;
     return '<div class="ev ev-mundial" style="--cc:'+cc+'" title="'+rawLbl.replace(/"/g,"&quot;")+'">'+
       '<span class="t">'+timeRange(e)+(cross?' <span class="xday">(día sig.)</span>':'')+'</span>'+
       '<span class="n">'+displayLabel+'</span>'+
@@ -994,8 +1019,7 @@ function renderNoPuedes(){
 
 function render(){
   if(!EVENTS.length&&!state.nopuedes){return;}
-  if(state.nopuedes){renderNoPuedes();}
-  else if(state.view==="month")renderMonth();else renderWeek();
+  if(state.view==="month")renderMonth();else renderWeek();
   const diff=state.tz-BASE_TZ;
   document.getElementById("tzLine").innerHTML=diff===0?('Horas en <b>'+state.tzLabel+'</b> \u2014 hora base.'):('Horas en <b>'+state.tzLabel+'</b> \u2014 '+(diff>0?'+':'')+diff+' h respecto a la base (Centroam\u00e9rica, UTC\u22126).');
 }

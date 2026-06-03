@@ -432,13 +432,13 @@ const BASE_TZ=-6;
 const MONTHS=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const DOWS=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 const DOWL=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
-const state={view:"month", tz:-6, weekend:false, task:false, exam:false, mundial:false, nopuedes:false, soloMundial:false, mundial:false, tzLabel:"Centroam\u00e9rica (UTC\u22126)",
+const state={view:"month", tz:-6, weekend:false, task:false, exam:false, mundial:false, nopuedes:false, soloMundial:false, tzLabel:"Centroam\u00e9rica (UTC\u22126)",
   materias:new Set(), profs:new Set(), days:new Set(), months:new Set(), weeks:new Set()};
 // ===== Memoria de filtros: recuerda lo seleccionado al recargar =====
 const STORE_KEY="mbao2028_filtros";
 function saveState(){
   try{localStorage.setItem(STORE_KEY,JSON.stringify({
-    view:state.view, weekend:state.weekend, task:state.task, exam:state.exam, mundial:state.mundial, nopuedes:state.nopuedes, soloMundial:state.soloMundial, mundial:state.mundial,
+    view:state.view, weekend:state.weekend, task:state.task, exam:state.exam, mundial:state.mundial, nopuedes:state.nopuedes, soloMundial:state.soloMundial,
     tzIdx:document.getElementById("fTz").selectedIndex,
     materias:[...state.materias], profs:[...state.profs], days:[...state.days],
     months:[...state.months], weeks:[...state.weeks]
@@ -455,7 +455,6 @@ function loadState(){
     if(typeof s.mundial==="boolean")state.mundial=s.mundial;
     if(typeof s.nopuedes==="boolean")state.nopuedes=s.nopuedes;
     if(typeof s.soloMundial==="boolean")state.soloMundial=s.soloMundial;
-    if(typeof s.mundial==="boolean")state.mundial=s.mundial;
     if(s.tzIdx!=null)state._tzIdx=s.tzIdx;
     if(Array.isArray(s.materias))state.materias=new Set(s.materias);
     if(Array.isArray(s.profs))state.profs=new Set(s.profs);
@@ -527,7 +526,7 @@ function rebuildAllMultis(){MULTI.forEach(c=>buildMulti(c.id));}
 // Calcula las opciones de cada filtro a partir de los datos cargados
 function initFilters(){
   const usedSubj=new Set(EVENTS.filter(e=>e.subj!=="mundial").map(e=>e.subj));
-  if(state.mundial)MUNDIAL_EVENTS.forEach(e=>usedSubj.add(e.subj));
+  if(state.mundial||state.soloMundial)MUNDIAL_EVENTS.forEach(e=>usedSubj.add(e.subj));
   OPTS.msMateria=Object.entries(SUBJ).filter(([k])=>usedSubj.has(k)).map(([k,v])=>({value:k,label:v.name}));
   OPTS.msProf=[...new Set(EVENTS.map(e=>e.prof))].filter(p=>p&&p!=="\u2014").sort((a,b)=>a.localeCompare(b,'es')).map(p=>({value:p,label:p}));
   OPTS.msMes=[...new Set(EVENTS.map(e=>e.y+"-"+pad(e.m+1)))].sort().map(k=>{const [y,m]=k.split("-");return {value:k,label:MONTHS[Number(m)-1]+' '+y};});
@@ -569,7 +568,7 @@ function passFilters(e, dt){
   return true;
 }
 function eventsByDay(dateKey){
-  const _base=EVENTS.filter(e=>e.subj!="mundial");const _src=state.mundial?[..._base,...MUNDIAL_EVENTS]:_base;
+  const _base=EVENTS.filter(e=>e.subj!="mundial");const _src=(state.mundial||state.soloMundial)?[..._base,...MUNDIAL_EVENTS]:_base;
   return _src.filter(e=>e.dateKey===dateKey).map(e=>({...e,dispMin:shiftMin(e.min,state.tz),dispEnd:(e.end!=null?shiftMin(e.end,state.tz):null)})).sort((a,b)=>a.dispMin-b.dispMin);
 }
 const calArea=document.getElementById("calArea");
@@ -698,7 +697,7 @@ function weekRowHTML(weekStart, restrictMonth){
 /* Date range spanning the whole dataset. */
 function datasetBounds(){
   let min=null,max=null;
-  const _base2=EVENTS.filter(e=>e.subj!="mundial");const _all=state.mundial?[..._base2,...MUNDIAL_EVENTS]:_base2;
+  const _base2=EVENTS.filter(e=>e.subj!="mundial");const _all=(state.mundial||state.soloMundial)?[..._base2,...MUNDIAL_EVENTS]:_base2;
   _all.forEach(e=>{const dt=new Date(e.y,e.m,e.d);if(!min||dt<min)min=dt;if(!max||dt>max)max=dt;});
   return [min,max];
 }
@@ -783,14 +782,14 @@ document.querySelectorAll(".ms-btn").forEach(b=>{b.onclick=ev=>{ev.stopPropagati
 document.addEventListener("click",ev=>{document.querySelectorAll(".ms.open").forEach(ms=>{if(!ms.contains(ev.target))ms.classList.remove("open");});});
 const _btn=document.getElementById("btnReload");if(_btn)_btn.onclick=async()=>{
   await loadData();
-  if(state.mundial){await loadMundial(true);initFilters();render();}
+  if(state.mundial||state.soloMundial){await loadMundial(true);initFilters();render();}
 };
 function toggleTasks(){state.task=!state.task;if(state.task)state.exam=false;syncFilterBtns();saveState();render();}
 function toggleExams(){state.exam=!state.exam;if(state.exam)state.task=false;syncFilterBtns();saveState();render();}
 function toggleWeekend(){state.weekend=!state.weekend;if(state.weekend)state.days.clear();syncFilterBtns();rebuildAllMultis();saveState();render();}
 function clearFilters(){
   state.materias.clear();state.profs.clear();state.days.clear();state.months.clear();state.weeks.clear();
-  state.weekend=false;state.task=false;state.exam=false;state.mundial=false;state.nopuedes=false;state.soloMundial=false;state.mundial=false;
+  state.weekend=false;state.task=false;state.exam=false;state.mundial=false;state.nopuedes=false;state.soloMundial=false;
   applyStateToControls();saveState();render();requestAnimationFrame(scrollToToday);
 }
 const _bt=document.getElementById("btnTasks");if(_bt)_bt.onclick=toggleTasks;
@@ -798,7 +797,6 @@ const _bx=document.getElementById("btnExams");if(_bx)_bx.onclick=toggleExams;
 const _bw=document.getElementById("btnWeekend");if(_bw)_bw.onclick=toggleWeekend;
 const _bf=document.getElementById("btnFiltros");if(_bf)_bf.onclick=()=>{const tb=document.querySelector(".topbar");const open=tb.classList.toggle("filtros-open");_bf.setAttribute("aria-expanded",open?"true":"false");};
 const _bc=document.getElementById("btnClear");if(_bc)_bc.onclick=clearFilters;
-function toggleMundial(){state.mundial=!state.mundial;syncFilterBtns();initFilters();saveState();render();}
 const _bnp=document.getElementById("btnNoPuedes");if(_bnp)_bnp.onclick=toggleNoPuedes;
 async function toggleNoPuedes(){
   state.nopuedes=!state.nopuedes;
@@ -814,10 +812,12 @@ async function toggleNoPuedes(){
   syncFilterBtns();initFilters();saveState();render();requestAnimationFrame(scrollToToday);
 }
 async function toggleMundial(){
-  state.mundial=!state.mundial;syncFilterBtns();
+  state.mundial=!state.mundial;
+  if(state.mundial) state.soloMundial=false;
+  syncFilterBtns();
   if(state.mundial&&MUNDIAL_EVENTS.length===0){
     const btn=document.getElementById("btnMundial");
-    if(btn){const p=btn.textContent;btn.textContent="⏳ Cargando...";const ok=await loadMundial();btn.textContent=ok?"⚽ Mundial 2026":"⚠️ Error API";}
+    if(btn){const p=btn.textContent;btn.textContent="⏳ Cargando...";await loadMundial();btn.textContent=p;}
     else await loadMundial();
   }
   state.months.clear();state.weeks.clear();
@@ -825,8 +825,8 @@ async function toggleMundial(){
 }
 async function toggleSoloMundial(){
   state.soloMundial=!state.soloMundial;
-  if(state.soloMundial&&!state.mundial){
-    state.mundial=true;
+  if(state.soloMundial) state.mundial=false;
+  if(state.soloMundial){
     if(MUNDIAL_EVENTS.length===0){
       const btn=document.getElementById("btnSoloMundial");
       if(btn){const p=btn.textContent;btn.textContent="⏳ Cargando...";await loadMundial();btn.textContent=p;}

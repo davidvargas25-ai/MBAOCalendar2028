@@ -31,6 +31,7 @@
   --c-orgind:#1f6f8c;
   --c-grupoest:#1f9cc4;
   --c-act:#8a857c;
+  --c-mundial:#c79500;
 }
 *{box-sizing:border-box}
 body{margin:0;background:
@@ -92,6 +93,7 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .today-btn{width:auto!important;padding:0 14px;font-size:.8rem!important;font-weight:600;height:36px}
 .filtros-toggle{display:none}
 .today-btn.active{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}
+#btnMundial.active{background:#8a6000!important;border-color:#8a6000!important;color:#fff!important;}
 .view-toggle{margin-left:auto}
 /* ===== Rejilla de 7 columnas por día de la semana ===== */
 .weekhead{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:0 0 6px;padding:0 2px}
@@ -154,6 +156,7 @@ select:disabled{opacity:.5;cursor:not-allowed}
       <button id="btnTasks" class="today-btn" title="Muestra únicamente entregables / tareas">&#9745; Solo entregables</button>
       <button id="btnExams" class="today-btn" title="Muestra únicamente exámenes">&#9998; Solo exámenes</button>
       <button id="btnWeekend" class="today-btn" title="Muestra únicamente sábados y domingos">&#9728; Solo fin de semana</button>
+      <button id="btnMundial" class="today-btn" title="Mostrar/ocultar partidos del Mundial FIFA 2026">⚽ Mundial 2026</button>
       <button id="btnClear" class="today-btn" title="Restablece todos los filtros">&#10005; Limpiar filtros</button>
     </div>
     <div class="seg view-toggle">
@@ -198,11 +201,123 @@ const SUBJ = {
   datamodels:{name:"Data models and decisions", color:"var(--c-datamodels)", prof:"Florian Federspiel"},
   orgind:{name:"Organización Industrial", color:"var(--c-orgind)", prof:"Conrado Cuevas"},
   grupoest:{name:"Grupo de Estudio", color:"var(--c-grupoest)", prof:"CAE"},
+  mundial:{name:"⚽ Mundial 2026", color:"var(--c-mundial)", prof:"—"},
   act:{name:"Actividades y logística", color:"var(--c-act)", prof:"—"}
 };
 
 // ===== Capa de datos en vivo: lee la hoja publicada de Google Sheets =====
 const CSV_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vQq3sXfPTvpFc29omeHSN6DL-IvhUlzucQe835MoL02vOLoa2rz1tF2IlNmw6bxP6PpYXDFpmrTMl6W/pub?gid=73764161&single=true&output=csv";
+
+const MUNDIAL_RAW = [
+ ["2026-06-11",780,900,"mundial","\ud83c\uddf2\ud83c\uddfd M\u00e9xico vs \ud83c\uddff\ud83c\udde6 Sud\u00e1frica","Grupo A","Estadio Azteca, Ciudad de M\u00e9xico"],
+ ["2026-06-11",1200,1320,"mundial","\ud83c\uddf0\ud83c\uddf7 Corea del Sur vs \ud83c\udde8\ud83c\uddff Chequia","Grupo A","Estadio Akron, Guadalajara"],
+ ["2026-06-18",600,720,"mundial","\ud83c\udde8\ud83c\uddff Chequia vs \ud83c\uddff\ud83c\udde6 Sud\u00e1frica","Grupo A","Mercedes-Benz Stadium, Atlanta"],
+ ["2026-06-18",1140,1260,"mundial","\ud83c\uddf2\ud83c\uddfd M\u00e9xico vs \ud83c\uddf0\ud83c\uddf7 Corea del Sur","Grupo A","Estadio Akron, Guadalajara"],
+ ["2026-06-24",1140,1260,"mundial","\ud83c\udde8\ud83c\uddff Chequia vs \ud83c\uddf2\ud83c\uddfd M\u00e9xico","Grupo A","Estadio Azteca, Ciudad de M\u00e9xico"],
+ ["2026-06-24",1140,1260,"mundial","\ud83c\uddff\ud83c\udde6 Sud\u00e1frica vs \ud83c\uddf0\ud83c\uddf7 Corea del Sur","Grupo A","Estadio BBVA, Monterrey"],
+ ["2026-06-12",780,900,"mundial","\ud83c\udde8\ud83c\udde6 Canad\u00e1 vs \ud83c\udde7\ud83c\udde6 Bosnia y Herzegovina","Grupo B","BMO Field, Toronto"],
+ ["2026-06-13",780,900,"mundial","\ud83c\uddf6\ud83c\udde6 Catar vs \ud83c\udde8\ud83c\udded Suiza","Grupo B","Levi's Stadium, San Francisco"],
+ ["2026-06-18",780,900,"mundial","\ud83c\udde8\ud83c\udded Suiza vs \ud83c\udde7\ud83c\udde6 Bosnia y Herzegovina","Grupo B","SoFi Stadium, Los \u00c1ngeles"],
+ ["2026-06-18",960,1080,"mundial","\ud83c\udde8\ud83c\udde6 Canad\u00e1 vs \ud83c\uddf6\ud83c\udde6 Catar","Grupo B","BC Place, Vancouver"],
+ ["2026-06-24",780,900,"mundial","\ud83c\udde8\ud83c\udded Suiza vs \ud83c\udde8\ud83c\udde6 Canad\u00e1","Grupo B","BC Place, Vancouver"],
+ ["2026-06-24",780,900,"mundial","\ud83c\udde7\ud83c\udde6 Bosnia y Herzegovina vs \ud83c\uddf6\ud83c\udde6 Catar","Grupo B","Lumen Field, Seattle"],
+ ["2026-06-13",960,1080,"mundial","\ud83c\udde7\ud83c\uddf7 Brasil vs \ud83c\uddf2\ud83c\udde6 Marruecos","Grupo C","MetLife Stadium, Nueva York/Nueva Jersey"],
+ ["2026-06-13",1140,1260,"mundial","\ud83c\udded\ud83c\uddf9 Hait\u00ed vs \ud83c\udff4\udb40\udc67\udb40\udc62\udb40\udc73\udb40\udc63\udb40\udc74\udb40\udc7f Escocia","Grupo C","Gillette Stadium, Boston"],
+ ["2026-06-19",960,1080,"mundial","\ud83c\udff4\udb40\udc67\udb40\udc62\udb40\udc73\udb40\udc63\udb40\udc74\udb40\udc7f Escocia vs \ud83c\uddf2\ud83c\udde6 Marruecos","Grupo C","Gillette Stadium, Boston"],
+ ["2026-06-19",1140,1260,"mundial","\ud83c\udde7\ud83c\uddf7 Brasil vs \ud83c\udded\ud83c\uddf9 Hait\u00ed","Grupo C","Lincoln Financial Field, Philadelphia"],
+ ["2026-06-24",960,1080,"mundial","\ud83c\udff4\udb40\udc67\udb40\udc62\udb40\udc73\udb40\udc63\udb40\udc74\udb40\udc7f Escocia vs \ud83c\udde7\ud83c\uddf7 Brasil","Grupo C","Hard Rock Stadium, Miami"],
+ ["2026-06-24",960,1080,"mundial","\ud83c\uddf2\ud83c\udde6 Marruecos vs \ud83c\udded\ud83c\uddf9 Hait\u00ed","Grupo C","Mercedes-Benz Stadium, Atlanta"],
+ ["2026-06-12",1140,1260,"mundial","\ud83c\uddfa\ud83c\uddf8 Estados Unidos vs \ud83c\uddf5\ud83c\uddfe Paraguay","Grupo D","SoFi Stadium, Los \u00c1ngeles"],
+ ["2026-06-12",1320,1440,"mundial","\ud83c\udde6\ud83c\uddfa Australia vs \ud83c\uddf9\ud83c\uddf7 Turqu\u00eda","Grupo D","BC Place, Vancouver"],
+ ["2026-06-19",780,900,"mundial","\ud83c\uddfa\ud83c\uddf8 Estados Unidos vs \ud83c\udde6\ud83c\uddfa Australia","Grupo D","Lumen Field, Seattle"],
+ ["2026-06-18",1320,1440,"mundial","\ud83c\uddf9\ud83c\uddf7 Turqu\u00eda vs \ud83c\uddf5\ud83c\uddfe Paraguay","Grupo D","Levi's Stadium, San Francisco"],
+ ["2026-06-25",1200,1320,"mundial","\ud83c\uddf9\ud83c\uddf7 Turqu\u00eda vs \ud83c\uddfa\ud83c\uddf8 Estados Unidos","Grupo D","SoFi Stadium, Los \u00c1ngeles"],
+ ["2026-06-25",1200,1320,"mundial","\ud83c\uddf5\ud83c\uddfe Paraguay vs \ud83c\udde6\ud83c\uddfa Australia","Grupo D","Levi's Stadium, San Francisco"],
+ ["2026-06-14",660,780,"mundial","\ud83c\udde9\ud83c\uddea Alemania vs \ud83c\udde8\ud83c\uddfc Curazao","Grupo E","NRG Stadium, Houston"],
+ ["2026-06-14",1020,1140,"mundial","\ud83c\udde8\ud83c\uddee Costa de Marfil vs \ud83c\uddea\ud83c\udde8 Ecuador","Grupo E","Lincoln Financial Field, Philadelphia"],
+ ["2026-06-20",840,960,"mundial","\ud83c\udde9\ud83c\uddea Alemania vs \ud83c\udde8\ud83c\uddee Costa de Marfil","Grupo E","BMO Field, Toronto"],
+ ["2026-06-20",1080,1200,"mundial","\ud83c\uddea\ud83c\udde8 Ecuador vs \ud83c\udde8\ud83c\uddfc Curazao","Grupo E","Arrowhead Stadium, Kansas City"],
+ ["2026-06-25",840,960,"mundial","\ud83c\uddea\ud83c\udde8 Ecuador vs \ud83c\udde9\ud83c\uddea Alemania","Grupo E","MetLife Stadium, Nueva York/Nueva Jersey"],
+ ["2026-06-25",840,960,"mundial","\ud83c\udde8\ud83c\uddfc Curazao vs \ud83c\udde8\ud83c\uddee Costa de Marfil","Grupo E","Lincoln Financial Field, Philadelphia"],
+ ["2026-06-14",840,960,"mundial","\ud83c\uddf3\ud83c\uddf1 Pa\u00edses Bajos vs \ud83c\uddef\ud83c\uddf5 Jap\u00f3n","Grupo F","AT&T Stadium, Dallas"],
+ ["2026-06-14",1200,1320,"mundial","\ud83c\uddf8\ud83c\uddea Suecia vs \ud83c\uddf9\ud83c\uddf3 T\u00fanez","Grupo F","Estadio BBVA, Monterrey"],
+ ["2026-06-20",660,780,"mundial","\ud83c\uddf3\ud83c\uddf1 Pa\u00edses Bajos vs \ud83c\uddf8\ud83c\uddea Suecia","Grupo F","NRG Stadium, Houston"],
+ ["2026-06-19",1320,1440,"mundial","\ud83c\uddf9\ud83c\uddf3 T\u00fanez vs \ud83c\uddef\ud83c\uddf5 Jap\u00f3n","Grupo F","Estadio BBVA, Monterrey"],
+ ["2026-06-25",1020,1140,"mundial","\ud83c\uddef\ud83c\uddf5 Jap\u00f3n vs \ud83c\uddf8\ud83c\uddea Suecia","Grupo F","AT&T Stadium, Dallas"],
+ ["2026-06-25",1020,1140,"mundial","\ud83c\uddf9\ud83c\uddf3 T\u00fanez vs \ud83c\uddf3\ud83c\uddf1 Pa\u00edses Bajos","Grupo F","Arrowhead Stadium, Kansas City"],
+ ["2026-06-15",780,900,"mundial","\ud83c\udde7\ud83c\uddea B\u00e9lgica vs \ud83c\uddea\ud83c\uddec Egipto","Grupo G","Lumen Field, Seattle"],
+ ["2026-06-15",1140,1260,"mundial","\ud83c\uddee\ud83c\uddf7 Ir\u00e1n vs \ud83c\uddf3\ud83c\uddff Nueva Zelanda","Grupo G","SoFi Stadium, Los \u00c1ngeles"],
+ ["2026-06-21",780,900,"mundial","\ud83c\udde7\ud83c\uddea B\u00e9lgica vs \ud83c\uddee\ud83c\uddf7 Ir\u00e1n","Grupo G","SoFi Stadium, Los \u00c1ngeles"],
+ ["2026-06-21",1140,1260,"mundial","\ud83c\uddf3\ud83c\uddff Nueva Zelanda vs \ud83c\uddea\ud83c\uddec Egipto","Grupo G","BC Place, Vancouver"],
+ ["2026-06-26",1260,1380,"mundial","\ud83c\uddea\ud83c\uddec Egipto vs \ud83c\uddee\ud83c\uddf7 Ir\u00e1n","Grupo G","Lumen Field, Seattle"],
+ ["2026-06-26",1260,1380,"mundial","\ud83c\uddf3\ud83c\uddff Nueva Zelanda vs \ud83c\udde7\ud83c\uddea B\u00e9lgica","Grupo G","BC Place, Vancouver"],
+ ["2026-06-15",600,720,"mundial","\ud83c\uddea\ud83c\uddf8 Espa\u00f1a vs \ud83c\udde8\ud83c\uddfb Cabo Verde","Grupo H","Mercedes-Benz Stadium, Atlanta"],
+ ["2026-06-15",960,1080,"mundial","\ud83c\uddf8\ud83c\udde6 Arabia Saudita vs \ud83c\uddfa\ud83c\uddfe Uruguay","Grupo H","Hard Rock Stadium, Miami"],
+ ["2026-06-21",600,720,"mundial","\ud83c\uddea\ud83c\uddf8 Espa\u00f1a vs \ud83c\uddf8\ud83c\udde6 Arabia Saudita","Grupo H","Mercedes-Benz Stadium, Atlanta"],
+ ["2026-06-21",960,1080,"mundial","\ud83c\uddfa\ud83c\uddfe Uruguay vs \ud83c\udde8\ud83c\uddfb Cabo Verde","Grupo H","Hard Rock Stadium, Miami"],
+ ["2026-06-26",1080,1200,"mundial","\ud83c\udde8\ud83c\uddfb Cabo Verde vs \ud83c\uddf8\ud83c\udde6 Arabia Saudita","Grupo H","NRG Stadium, Houston"],
+ ["2026-06-26",1080,1200,"mundial","\ud83c\uddfa\ud83c\uddfe Uruguay vs \ud83c\uddea\ud83c\uddf8 Espa\u00f1a","Grupo H","Estadio Akron, Guadalajara"],
+ ["2026-06-16",780,900,"mundial","\ud83c\uddeb\ud83c\uddf7 Francia vs \ud83c\uddf8\ud83c\uddf3 Senegal","Grupo I","MetLife Stadium, Nueva York/Nueva Jersey"],
+ ["2026-06-16",960,1080,"mundial","\ud83c\uddee\ud83c\uddf6 Irak vs \ud83c\uddf3\ud83c\uddf4 Noruega","Grupo I","Gillette Stadium, Boston"],
+ ["2026-06-22",900,1020,"mundial","\ud83c\uddeb\ud83c\uddf7 Francia vs \ud83c\uddee\ud83c\uddf6 Irak","Grupo I","Lincoln Financial Field, Philadelphia"],
+ ["2026-06-22",1080,1200,"mundial","\ud83c\uddf3\ud83c\uddf4 Noruega vs \ud83c\uddf8\ud83c\uddf3 Senegal","Grupo I","MetLife Stadium, Nueva York/Nueva Jersey"],
+ ["2026-06-26",780,900,"mundial","\ud83c\uddf3\ud83c\uddf4 Noruega vs \ud83c\uddeb\ud83c\uddf7 Francia","Grupo I","Gillette Stadium, Boston"],
+ ["2026-06-26",780,900,"mundial","\ud83c\uddf8\ud83c\uddf3 Senegal vs \ud83c\uddee\ud83c\uddf6 Irak","Grupo I","BMO Field, Toronto"],
+ ["2026-06-16",1140,1260,"mundial","\ud83c\udde6\ud83c\uddf7 Argentina vs \ud83c\udde9\ud83c\uddff Argelia","Grupo J","Arrowhead Stadium, Kansas City"],
+ ["2026-06-15",1320,1440,"mundial","\ud83c\udde6\ud83c\uddf9 Austria vs \ud83c\uddef\ud83c\uddf4 Jordania","Grupo J","Levi's Stadium, San Francisco"],
+ ["2026-06-22",660,780,"mundial","\ud83c\udde6\ud83c\uddf7 Argentina vs \ud83c\udde6\ud83c\uddf9 Austria","Grupo J","AT&T Stadium, Dallas"],
+ ["2026-06-22",1260,1380,"mundial","\ud83c\uddef\ud83c\uddf4 Jordania vs \ud83c\udde9\ud83c\uddff Argelia","Grupo J","Levi's Stadium, San Francisco"],
+ ["2026-06-27",1200,1320,"mundial","\ud83c\udde9\ud83c\uddff Argelia vs \ud83c\udde6\ud83c\uddf9 Austria","Grupo J","Arrowhead Stadium, Kansas City"],
+ ["2026-06-27",1200,1320,"mundial","\ud83c\uddef\ud83c\uddf4 Jordania vs \ud83c\udde6\ud83c\uddf7 Argentina","Grupo J","AT&T Stadium, Dallas"],
+ ["2026-06-17",660,780,"mundial","\ud83c\uddf5\ud83c\uddf9 Portugal vs \ud83c\udde8\ud83c\udde9 RD Congo","Grupo K","NRG Stadium, Houston"],
+ ["2026-06-17",1200,1320,"mundial","\ud83c\uddfa\ud83c\uddff Uzbekist\u00e1n vs \ud83c\udde8\ud83c\uddf4 Colombia","Grupo K","Estadio Azteca, Ciudad de M\u00e9xico"],
+ ["2026-06-23",660,780,"mundial","\ud83c\uddf5\ud83c\uddf9 Portugal vs \ud83c\uddfa\ud83c\uddff Uzbekist\u00e1n","Grupo K","NRG Stadium, Houston"],
+ ["2026-06-23",1200,1320,"mundial","\ud83c\udde8\ud83c\uddf4 Colombia vs \ud83c\udde8\ud83c\udde9 RD Congo","Grupo K","Estadio Akron, Guadalajara"],
+ ["2026-06-27",1050,1170,"mundial","\ud83c\udde8\ud83c\uddf4 Colombia vs \ud83c\uddf5\ud83c\uddf9 Portugal","Grupo K","Hard Rock Stadium, Miami"],
+ ["2026-06-27",1050,1170,"mundial","\ud83c\udde8\ud83c\udde9 RD Congo vs \ud83c\uddfa\ud83c\uddff Uzbekist\u00e1n","Grupo K","Mercedes-Benz Stadium, Atlanta"],
+ ["2026-06-17",840,960,"mundial","\ud83c\udff4\udb40\udc67\udb40\udc62\udb40\udc65\udb40\udc6e\udb40\udc67\udb40\udc7f Inglaterra vs \ud83c\udded\ud83c\uddf7 Croacia","Grupo L","AT&T Stadium, Dallas"],
+ ["2026-06-17",1020,1140,"mundial","\ud83c\uddec\ud83c\udded Ghana vs \ud83c\uddf5\ud83c\udde6 Panam\u00e1","Grupo L","BMO Field, Toronto"],
+ ["2026-06-23",840,960,"mundial","\ud83c\udff4\udb40\udc67\udb40\udc62\udb40\udc65\udb40\udc6e\udb40\udc67\udb40\udc7f Inglaterra vs \ud83c\uddec\ud83c\udded Ghana","Grupo L","Gillette Stadium, Boston"],
+ ["2026-06-23",1020,1140,"mundial","\ud83c\uddf5\ud83c\udde6 Panam\u00e1 vs \ud83c\udded\ud83c\uddf7 Croacia","Grupo L","BMO Field, Toronto"],
+ ["2026-06-27",900,1020,"mundial","\ud83c\uddf5\ud83c\udde6 Panam\u00e1 vs \ud83c\udff4\udb40\udc67\udb40\udc62\udb40\udc65\udb40\udc6e\udb40\udc67\udb40\udc7f Inglaterra","Grupo L","MetLife Stadium, Nueva York/Nueva Jersey"],
+ ["2026-06-27",900,1020,"mundial","\ud83c\udded\ud83c\uddf7 Croacia vs \ud83c\uddec\ud83c\udded Ghana","Grupo L","Lincoln Financial Field, Philadelphia"],
+ ["2026-06-28",780,900,"mundial","\u26bd 2.\u00ba A vs 2.\u00ba B","16vos de final","SoFi Stadium, Los \u00c1ngeles"],
+ ["2026-06-29",660,780,"mundial","\u26bd 1.\u00ba C vs 2.\u00ba F","16vos de final","NRG Stadium, Houston"],
+ ["2026-06-29",870,990,"mundial","\u26bd 1.\u00ba E vs 3.\u00ba (A/B/C/D/F)","16vos de final","Gillette Stadium, Boston"],
+ ["2026-06-29",1140,1260,"mundial","\u26bd 1.\u00ba F vs 2.\u00ba C","16vos de final","Estadio BBVA, Monterrey"],
+ ["2026-06-30",660,780,"mundial","\u26bd 2.\u00ba E vs 2.\u00ba I","16vos de final","AT&T Stadium, Dallas"],
+ ["2026-06-30",900,1020,"mundial","\u26bd 1.\u00ba I vs 3.\u00ba (C/D/F/G/H)","16vos de final","MetLife Stadium, Nueva York/Nueva Jersey"],
+ ["2026-06-30",1140,1260,"mundial","\u26bd 1.\u00ba A vs 3.\u00ba (C/E/F/H/I)","16vos de final","Estadio Azteca, Ciudad de M\u00e9xico"],
+ ["2026-07-01",600,720,"mundial","\u26bd 1.\u00ba L vs 3.\u00ba (E/H/I/J/K)","16vos de final","Mercedes-Benz Stadium, Atlanta"],
+ ["2026-07-01",840,960,"mundial","\u26bd 1.\u00ba G vs 3.\u00ba (A/E/H/I/J)","16vos de final","Lumen Field, Seattle"],
+ ["2026-07-01",1080,1200,"mundial","\u26bd 1.\u00ba D vs 3.\u00ba (B/E/F/I/J)","16vos de final","Levi's Stadium, San Francisco"],
+ ["2026-07-02",780,900,"mundial","\u26bd 1.\u00ba H vs 2.\u00ba J","16vos de final","SoFi Stadium, Los \u00c1ngeles"],
+ ["2026-07-02",1020,1140,"mundial","\u26bd 2.\u00ba K vs 2.\u00ba L","16vos de final","BMO Field, Toronto"],
+ ["2026-07-02",1260,1380,"mundial","\u26bd 1.\u00ba B vs 3.\u00ba (E/F/G/I/J)","16vos de final","BC Place, Vancouver"],
+ ["2026-07-03",720,840,"mundial","\u26bd 2.\u00ba D vs 2.\u00ba G","16vos de final","AT&T Stadium, Dallas"],
+ ["2026-07-03",960,1080,"mundial","\u26bd 1.\u00ba J vs 2.\u00ba H","16vos de final","Hard Rock Stadium, Miami"],
+ ["2026-07-03",1170,1290,"mundial","\u26bd 1.\u00ba K vs 3.\u00ba (D/E/I/J/L)","16vos de final","Arrowhead Stadium, Kansas City"],
+ ["2026-07-04",660,780,"mundial","\u26bd Octavos de final","Octavos de final","NRG Stadium, Houston"],
+ ["2026-07-04",900,1020,"mundial","\u26bd Octavos de final","Octavos de final","Lincoln Financial Field, Philadelphia"],
+ ["2026-07-05",840,960,"mundial","\u26bd Octavos de final","Octavos de final","MetLife Stadium, Nueva York/Nueva Jersey"],
+ ["2026-07-05",1080,1200,"mundial","\u26bd Octavos de final","Octavos de final","Estadio Azteca, Ciudad de M\u00e9xico"],
+ ["2026-07-06",780,900,"mundial","\u26bd Octavos de final","Octavos de final","AT&T Stadium, Dallas"],
+ ["2026-07-06",1080,1200,"mundial","\u26bd Octavos de final","Octavos de final","Lumen Field, Seattle"],
+ ["2026-07-07",600,720,"mundial","\u26bd Octavos de final","Octavos de final","Mercedes-Benz Stadium, Atlanta"],
+ ["2026-07-07",840,960,"mundial","\u26bd Octavos de final","Octavos de final","BC Place, Vancouver"],
+ ["2026-07-09",840,960,"mundial","\u26bd Cuartos de final","Cuartos de final","Gillette Stadium, Boston"],
+ ["2026-07-10",780,900,"mundial","\u26bd Cuartos de final","Cuartos de final","SoFi Stadium, Los \u00c1ngeles"],
+ ["2026-07-11",900,1020,"mundial","\u26bd Cuartos de final","Cuartos de final","Hard Rock Stadium, Miami"],
+ ["2026-07-11",1140,1260,"mundial","\u26bd Cuartos de final","Cuartos de final","Arrowhead Stadium, Kansas City"],
+ ["2026-07-14",780,900,"mundial","\u26bd Semifinal 1","Semifinal","AT&T Stadium, Dallas"],
+ ["2026-07-15",780,900,"mundial","\u26bd Semifinal 2","Semifinal","Mercedes-Benz Stadium, Atlanta"],
+ ["2026-07-18",900,1020,"mundial","\u26bd Tercer lugar","Tercer lugar","Hard Rock Stadium, Miami"],
+ ["2026-07-19",780,900,"mundial","\ud83c\udfc6 FINAL \u00b7 Copa del Mundo FIFA 2026","Final","MetLife Stadium, Nueva York/Nueva Jersey"],
+];
+const MUNDIAL_EVENTS = MUNDIAL_RAW.map(([date,min,end,subj,label,ses,loc])=>{
+  const [y,m,d]=date.split("-").map(Number);
+  return {y, m:m-1, d, dateKey:date, min, end, subj, label, ses, loc, tipo:"Partido", prof:"\u2014"};
+});
 
 let EVENTS=[];
 
@@ -292,13 +407,13 @@ const BASE_TZ=-6;
 const MONTHS=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const DOWS=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 const DOWL=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
-const state={view:"month", tz:-6, weekend:false, task:false, exam:false, tzLabel:"Centroam\u00e9rica (UTC\u22126)",
+const state={view:"month", tz:-6, weekend:false, task:false, exam:false, mundial:false, tzLabel:"Centroam\u00e9rica (UTC\u22126)",
   materias:new Set(), profs:new Set(), days:new Set(), months:new Set(), weeks:new Set()};
 // ===== Memoria de filtros: recuerda lo seleccionado al recargar =====
 const STORE_KEY="mbao2028_filtros";
 function saveState(){
   try{localStorage.setItem(STORE_KEY,JSON.stringify({
-    view:state.view, weekend:state.weekend, task:state.task, exam:state.exam,
+    view:state.view, weekend:state.weekend, task:state.task, exam:state.exam, mundial:state.mundial,
     tzIdx:document.getElementById("fTz").selectedIndex,
     materias:[...state.materias], profs:[...state.profs], days:[...state.days],
     months:[...state.months], weeks:[...state.weeks]
@@ -312,6 +427,7 @@ function loadState(){
     if(typeof s.weekend==="boolean")state.weekend=s.weekend;
     if(typeof s.task==="boolean")state.task=s.task;
     if(typeof s.exam==="boolean")state.exam=s.exam;
+    if(typeof s.mundial==="boolean")state.mundial=s.mundial;
     if(s.tzIdx!=null)state._tzIdx=s.tzIdx;
     if(Array.isArray(s.materias))state.materias=new Set(s.materias);
     if(Array.isArray(s.profs))state.profs=new Set(s.profs);
@@ -322,7 +438,7 @@ function loadState(){
 }
 // Refleja el estado en botones de filtro (entregables, exámenes, fin de semana)
 function syncFilterBtns(){
-  [["btnTasks","task"],["btnExams","exam"],["btnWeekend","weekend"]].forEach(([id,key])=>{
+  [["btnTasks","task"],["btnExams","exam"],["btnWeekend","weekend"],["btnMundial","mundial"]].forEach(([id,key])=>{
     const b=document.getElementById(id);if(b)b.classList.toggle("active",!!state[key]);
   });
 }
@@ -383,6 +499,7 @@ function rebuildAllMultis(){MULTI.forEach(c=>buildMulti(c.id));}
 // Calcula las opciones de cada filtro a partir de los datos cargados
 function initFilters(){
   const usedSubj=new Set(EVENTS.map(e=>e.subj));
+  if(state.mundial)MUNDIAL_EVENTS.forEach(e=>usedSubj.add(e.subj));
   OPTS.msMateria=Object.entries(SUBJ).filter(([k])=>usedSubj.has(k)).map(([k,v])=>({value:k,label:v.name}));
   OPTS.msProf=[...new Set(EVENTS.map(e=>e.prof))].filter(p=>p&&p!=="\u2014").sort((a,b)=>a.localeCompare(b,'es')).map(p=>({value:p,label:p}));
   OPTS.msMes=[...new Set(EVENTS.map(e=>e.y+"-"+pad(e.m+1)))].sort().map(k=>{const [y,m]=k.split("-");return {value:k,label:MONTHS[Number(m)-1]+' '+y};});
@@ -419,7 +536,8 @@ function passFilters(e, dt){
   return true;
 }
 function eventsByDay(dateKey){
-  return EVENTS.filter(e=>e.dateKey===dateKey).map(e=>({...e,dispMin:shiftMin(e.min,state.tz),dispEnd:(e.end!=null?shiftMin(e.end,state.tz):null)})).sort((a,b)=>a.dispMin-b.dispMin);
+  const _src=state.mundial?[...EVENTS,...MUNDIAL_EVENTS]:EVENTS;
+  return _src.filter(e=>e.dateKey===dateKey).map(e=>({...e,dispMin:shiftMin(e.min,state.tz),dispEnd:(e.end!=null?shiftMin(e.end,state.tz):null)})).sort((a,b)=>a.dispMin-b.dispMin);
 }
 const calArea=document.getElementById("calArea");
 calArea.addEventListener("change",ev=>{const t=ev.target;if(t&&t.classList&&t.classList.contains("taskdone")){toggleDone(decodeURIComponent(t.dataset.id),t.checked);}});
@@ -528,7 +646,8 @@ function weekRowHTML(weekStart, restrictMonth){
 /* Date range spanning the whole dataset. */
 function datasetBounds(){
   let min=null,max=null;
-  EVENTS.forEach(e=>{const dt=new Date(e.y,e.m,e.d);if(!min||dt<min)min=dt;if(!max||dt>max)max=dt;});
+  const _all=state.mundial?[...EVENTS,...MUNDIAL_EVENTS]:EVENTS;
+  _all.forEach(e=>{const dt=new Date(e.y,e.m,e.d);if(!min||dt<min)min=dt;if(!max||dt>max)max=dt;});
   return [min,max];
 }
 function plural(n){return n===1?"1 sesión":n+" sesiones";}
@@ -616,7 +735,7 @@ function toggleExams(){state.exam=!state.exam;if(state.exam)state.task=false;syn
 function toggleWeekend(){state.weekend=!state.weekend;if(state.weekend)state.days.clear();syncFilterBtns();rebuildAllMultis();saveState();render();}
 function clearFilters(){
   state.materias.clear();state.profs.clear();state.days.clear();state.months.clear();state.weeks.clear();
-  state.weekend=false;state.task=false;state.exam=false;
+  state.weekend=false;state.task=false;state.exam=false;state.mundial=false;
   applyStateToControls();saveState();render();requestAnimationFrame(scrollToToday);
 }
 const _bt=document.getElementById("btnTasks");if(_bt)_bt.onclick=toggleTasks;
@@ -624,6 +743,8 @@ const _bx=document.getElementById("btnExams");if(_bx)_bx.onclick=toggleExams;
 const _bw=document.getElementById("btnWeekend");if(_bw)_bw.onclick=toggleWeekend;
 const _bf=document.getElementById("btnFiltros");if(_bf)_bf.onclick=()=>{const tb=document.querySelector(".topbar");const open=tb.classList.toggle("filtros-open");_bf.setAttribute("aria-expanded",open?"true":"false");};
 const _bc=document.getElementById("btnClear");if(_bc)_bc.onclick=clearFilters;
+function toggleMundial(){state.mundial=!state.mundial;syncFilterBtns();initFilters();saveState();render();}
+const _bm=document.getElementById("btnMundial");if(_bm)_bm.onclick=toggleMundial;
 loadState();
 loadData();
 </script>

@@ -166,21 +166,27 @@ select:disabled{opacity:.5;cursor:not-allowed}
 }
 
 /* ── No Podrás Ver: vista semanal fija ── */
-.np-wrap{margin-top:16px;display:flex;flex-direction:column;gap:24px}
+.np-wrap{margin-top:16px;display:flex;flex-direction:column;gap:24px;background:#0b1829;border-radius:12px;padding:12px}
 .np-empty-msg{padding:60px 20px;text-align:center;color:var(--ink-soft);font-family:'Fraunces',serif;font-style:italic;font-size:1.05rem}
-.np-sem{display:flex;flex-direction:column;gap:10px}
+.np-sem{display:flex;flex-direction:column;gap:10px;background:#0b1829}
 .np-sem-hdr{font-size:.82rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);padding:6px 0 8px;border-bottom:2px solid var(--ink);margin-bottom:2px}
-.np-bloques{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start}
-.np-bloque{flex:1;min-width:200px;background:#0b1829;border-radius:10px;overflow:hidden}
+.np-wrap{background:#0b1829;border-radius:12px;padding:12px}
+.np-sem{background:#0b1829}
+.np-bloques{display:grid;grid-template-columns:2fr 1fr;gap:10px;background:#0b1829}
+.np-bloque{background:#0b1829;border-radius:8px;overflow:hidden;min-width:0}
 .np-grid{display:grid;width:100%;position:relative}
 .np-g-hora-hdr{background:#0b1829;border-bottom:1px solid rgba(255,255,255,.15);border-right:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);padding:5px 4px;box-sizing:border-box;position:sticky;top:0;z-index:3}
 .np-g-day-hdr{background:#0b1829;border-bottom:1px solid rgba(255,255,255,.15);border-left:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:.69rem;font-weight:700;color:rgba(255,255,255,.88);padding:5px 4px;box-sizing:border-box;position:sticky;top:0;z-index:3;text-transform:capitalize}
 .np-g-time{background:#0b1829;border-top:1px solid rgba(255,255,255,.07);border-right:1px solid rgba(255,255,255,.12);display:flex;align-items:flex-start;justify-content:flex-end;padding:2px 6px 0 2px;font-size:.6rem;font-variant-numeric:tabular-nums;color:rgba(255,255,255,.5);box-sizing:border-box}
-.np-g-cell{background:#0b1829;border-top:1px solid rgba(255,255,255,.07);border-left:1px solid rgba(255,255,255,.08);box-sizing:border-box;position:relative;overflow:hidden}
+.np-g-cell{background:#0b1829;border-top:1px solid rgba(255,255,255,.07);border-left:1px solid rgba(255,255,255,.08);box-sizing:border-box;overflow:hidden}
 .np-g-cell.hr{border-top:1px solid rgba(255,255,255,.18)}
 .np-g-cell.day-sep{border-left:2px solid rgba(255,255,255,.18)}
+.np-g-sub-hdr{background:#0b1829;border-top:1px solid rgba(255,255,255,.08);border-left:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:rgba(255,255,255,.35);box-sizing:border-box}
+.np-g-sub-hdr.day-sep{border-left:2px solid rgba(255,255,255,.18)}
+.np-g-time{background:#0b1829;border-top:1px solid rgba(255,255,255,.07);border-right:1px solid rgba(255,255,255,.12);display:flex;align-items:flex-start;justify-content:flex-end;padding:2px 6px 0 2px;font-size:.6rem;font-variant-numeric:tabular-nums;color:rgba(255,255,255,.5);box-sizing:border-box}
+.np-g-time.hr{color:rgba(255,255,255,.75);font-weight:600;border-top:1px solid rgba(255,255,255,.18)}
 .np-ev-wrap{position:absolute;inset:1px 2px;display:flex;gap:2px;overflow:hidden}
-.np-ev{flex:1;border-radius:4px;padding:2px 5px;display:flex;flex-direction:column;gap:1px;border-left:3px solid var(--ev-color);background:color-mix(in srgb,var(--ev-color) 40%,#0b1829);overflow:hidden;min-width:0}
+.np-ev{border-radius:4px;padding:2px 5px;display:flex;flex-direction:column;gap:1px;border-left:3px solid var(--ev-color);background:color-mix(in srgb,var(--ev-color) 40%,#0b1829);overflow:hidden;min-width:0;align-self:stretch}
 .np-ev-lbl{font-size:.67rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
 .np-ev-time{font-size:.58rem;color:rgba(255,255,255,.6);white-space:nowrap;font-variant-numeric:tabular-nums}
 </style>
@@ -856,89 +862,94 @@ function renderNoPuedes(){
   // ── Función: renderizar un bloque (LV o SAB) ─────────────────
   // days = [{label, dk, range:{s,e}}]
   const renderBloque=(days)=>{
-    // range del primer día (todos comparten el mismo rango en cada bloque)
     const range=days[0].range;
     const nSlots=(range.e-range.s)/SLOT;
-    // cols: 44px(hora) + 1fr×nDays
-    const colTpl='44px '+days.map(()=>'minmax(90px,1fr)').join(' ');
-    const rowTpl=HDR_H+'px '+Array(nSlots).fill(ROW_H+'px').join(' ');
+    const nDays=days.length;
+    // 2 sub-columnas por día: izquierda=clases, derecha=partidos
+    // grid: 44px(hora) + [1fr 1fr] × nDays
+    const colTpl='44px '+days.map(()=>'1fr 1fr').join(' ');
+    const rowTpl=HDR_H+'px 20px '+Array(nSlots).fill(ROW_H+'px').join(' ');
+    // filas: 1=header día, 2=sub-header (📚/⚽), 3..N+2=slots horarios
 
     let g='';
 
-    // Fila 0: cabeceras
-    g+='<div class="np-g-hora-hdr" style="grid-column:1;grid-row:1">Hora</div>';
+    // Fila 1: cabecera hora
+    g+='<div class="np-g-hora-hdr" style="grid-column:1;grid-row:1/3">Hora</div>';
+
+    // Fila 1: cabeceras de día (span 2 sub-columnas)
     days.forEach(({label},i)=>{
+      const c=2+i*2;
       const sep=i>0?' day-sep':'';
-      g+='<div class="np-g-day-hdr'+sep+'" style="grid-column:'+(i+2)+';grid-row:1">'+label+'</div>';
+      g+='<div class="np-g-day-hdr'+sep+'" style="grid-column:'+c+'/'+(c+2)+';grid-row:1">'+label+'</div>';
     });
 
-    // Filas de tiempo + celdas de fondo
+    // Fila 2: sub-cabeceras 📚 / ⚽
+    days.forEach((_,i)=>{
+      const cL=2+i*2, cR=3+i*2;
+      const sep=i>0?' day-sep':'';
+      g+='<div class="np-g-sub-hdr'+sep+'" style="grid-column:'+cL+';grid-row:2">📚</div>';
+      g+='<div class="np-g-sub-hdr" style="grid-column:'+cR+';grid-row:2">⚽</div>';
+    });
+
+    // Filas de tiempo + celdas de fondo (empiezan en fila 3)
     for(let slot=0;slot<nSlots;slot++){
       const t=range.s+slot*SLOT;
-      const row=slot+2;
+      const row=slot+3;
       const hr=t%60===0;
       const hrcls=hr?' hr':'';
-      g+='<div class="np-g-time" style="grid-column:1;grid-row:'+row+'">'+fmtTime(t)+'</div>';
+      g+='<div class="np-g-time'+hrcls+'" style="grid-column:1;grid-row:'+row+'">'+fmtTime(t)+'</div>';
       days.forEach((_,i)=>{
+        const cL=2+i*2, cR=3+i*2;
         const sep=i>0?' day-sep':'';
-        g+='<div class="np-g-cell'+hrcls+sep+'" style="grid-column:'+(i+2)+';grid-row:'+row+'"></div>';
+        g+='<div class="np-g-cell'+hrcls+sep+'" style="grid-column:'+cL+';grid-row:'+row+'"></div>';
+        g+='<div class="np-g-cell'+hrcls+'" style="grid-column:'+cR+';grid-row:'+row+'"></div>';
       });
     }
 
-    // Eventos — colocar sobre las celdas de fondo
+    // Eventos — solo los que forman parte de un clash
     days.forEach(({dk,range:r},di)=>{
-      const col=di+2;
-      const allEvs=[];
+      const cClase=2+di*2;   // sub-columna izquierda: clases
+      const cPartido=3+di*2; // sub-columna derecha: partidos
 
-      // Partidos mundiales del día
-      MUNDIAL_EVENTS.filter(p=>p.dateKey===dk).forEach(p=>{
-        const{s,e2}=toDisp(p.min,p.end);
-        // Recortar al rango del bloque
-        const cs=Math.max(s,r.s), ce=Math.min(e2,r.e);
-        if(ce<=cs)return;
-        const l=(p.loc||'').toLowerCase();
-        const cc=/guadalajara|monterrey|mexico.?city|ciudad.de/i.test(l)?'var(--wc-green)':
-                  /toronto|vancouver/i.test(l)?'var(--wc-red)':'var(--wc-blue)';
-        const lbl=p.label.replace(/[🇠-🇿]/gu,'').trim();
-        const sc=p.finished&&p.homeGoals!=null?' '+p.homeGoals+'–'+p.awayGoals:'';
-        allEvs.push({cs,ce,cc,txt:'⚽ '+lbl+sc,sub:p.ses||'',tipo:'partido'});
-      });
+      // Solo partidos con clash
+      const clashPartidos=MUNDIAL_EVENTS.filter(p=>p.dateKey===dk&&hasClash(p));
+      // Solo clases que solapen con algún partido clashing
+      const clashClases=(mbaByDay[dk]||[]).filter(e=>
+        clashPartidos.some(p=>{
+          const{s:ps,e2:pe}=toDisp(p.min,p.end);
+          const{s:es,e2:ee}=toDisp(e.min,e.end);
+          return es<pe&&ee>ps;
+        })
+      );
 
-      // Clases/exámenes del día
-      (mbaByDay[dk]||[]).forEach(e=>{
+      // Renderizar clases (sub-columna izquierda)
+      clashClases.forEach(e=>{
         const{s,e2}=toDisp(e.min,e.end);
         const cs=Math.max(s,r.s), ce=Math.min(e2,r.e);
         if(ce<=cs)return;
+        const rs=Math.round((cs-r.s)/SLOT)+3;
+        const re=Math.max(rs+1,Math.round((ce-r.s)/SLOT)+3);
         const cc=(SUBJ[e.subj]&&SUBJ[e.subj].color)||'var(--c-act)';
-        allEvs.push({cs,ce,cc,txt:e.label,sub:e.prof||'',tipo:'clase'});
+        g+='<div class="np-ev" style="--ev-color:'+cc+';grid-column:'+cClase+';grid-row:'+rs+'/'+re+';margin:1px 2px;box-sizing:border-box;">'+
+           '<span class="np-ev-lbl">'+e.label+'</span>'+
+           '<span class="np-ev-time">'+fmtTime(cs)+'–'+fmtTime(ce)+'</span></div>';
       });
 
-      if(!allEvs.length)return;
-
-      // Agrupar eventos por slots que ocupan — para detectar solapamientos
-      // Estrategia: para cada slot, ver qué eventos están activos → si >1 → dividir ancho
-      // Usamos posicionamiento absoluto dentro de cada celda con inset calculado
-
-      // Para cada evento, determinar en qué filas va y cuántos eventos comparten esas filas
-      // Simplificado: para cada par de eventos que se solapan, los ponemos lado a lado
-
-      // Agrupar por slot único y detectar colisiones
-      allEvs.forEach(ev=>{
-        const rowS=Math.round((ev.cs-r.s)/SLOT)+2;
-        const rowE=Math.max(rowS+1,Math.round((ev.ce-r.s)/SLOT)+2);
-        // Eventos que se solapan con este
-        const siblings=allEvs.filter(o=>o!==ev&&o.cs<ev.ce&&o.ce>ev.cs);
-        const total=siblings.length+1;
-        const idx=allEvs.indexOf(ev);
-        const pos=siblings.filter(o=>allEvs.indexOf(o)<idx).length;
-        const pct=100/total;
-        const left=pos*pct, width=pct;
-        const cc=ev.cc;
-        g+='<div style="position:absolute;top:1px;bottom:1px;left:'+left+'%;width:'+width+'%;grid-column:'+col+';grid-row:'+rowS+'/'+rowE+';z-index:2;padding:0 2px;box-sizing:border-box;">'+
-           '<div class="np-ev" style="--ev-color:'+cc+';height:100%;box-sizing:border-box">'+
-           '<span class="np-ev-lbl">'+ev.txt+'</span>'+
-           '<span class="np-ev-time">'+fmtTime(ev.cs)+'–'+fmtTime(ev.ce)+'</span>'+
-           '</div></div>';
+      // Renderizar partidos (sub-columna derecha)
+      clashPartidos.forEach(p=>{
+        const{s,e2}=toDisp(p.min,p.end);
+        const cs=Math.max(s,r.s), ce=Math.min(e2,r.e);
+        if(ce<=cs)return;
+        const rs=Math.round((cs-r.s)/SLOT)+3;
+        const re=Math.max(rs+1,Math.round((ce-r.s)/SLOT)+3);
+        const l=(p.loc||'').toLowerCase();
+        const cc=/guadalajara|monterrey|mexico.?city|ciudad.de/i.test(l)?'var(--wc-green)':
+                  /toronto|vancouver/i.test(l)?'var(--wc-red)':'var(--wc-blue)';
+        const lbl=p.label.replace(/[\u{1F1E0}-\u{1F1FF}]/gu,'').trim();
+        const sc=p.finished&&p.homeGoals!=null?' '+p.homeGoals+'–'+p.awayGoals:'';
+        g+='<div class="np-ev" style="--ev-color:'+cc+';grid-column:'+cPartido+';grid-row:'+rs+'/'+re+';margin:1px 2px;box-sizing:border-box;">'+
+           '<span class="np-ev-lbl">⚽ '+lbl+sc+'</span>'+
+           '<span class="np-ev-time">'+fmtTime(cs)+'–'+fmtTime(ce)+'</span></div>';
       });
     });
 

@@ -105,9 +105,10 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .filtros-toggle{display:none}
 .today-btn.active{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}
 /* ── Mundial group ── */
-.mundial-group{display:inline-flex;align-items:center;gap:4px;background:var(--wc-black);border:1.5px solid var(--wc-gold);border-radius:10px;padding:5px 9px 5px 9px;position:relative;margin-left:4px}
-.mundial-group-lbl{position:absolute;top:-8px;left:8px;background:var(--wc-black);padding:0 5px;font-size:.58rem;font-weight:800;color:var(--wc-gold);letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;pointer-events:none}
-.mundial-group .today-btn{color:var(--wc-offwhite)!important;border-color:rgba(201,162,39,.35)!important;background:rgba(255,255,255,.06)!important;height:22px}
+.mundial-group{display:inline-flex;flex-direction:column;align-items:flex-start;gap:3px;border:1.5px solid var(--wc-gold);border-radius:10px;padding:4px 8px 5px;margin-left:4px;background:rgba(201,162,39,.06)}
+.mundial-group-lbl{font-size:.58rem;font-weight:800;color:var(--wc-gold-dk);letter-spacing:.14em;text-transform:uppercase;line-height:1;padding:0 1px}
+.mundial-group-btns{display:flex;gap:4px;align-items:center}
+.mundial-group .today-btn{border-color:rgba(150,120,15,.4)!important;background:rgba(255,255,255,.7)!important;height:22px;color:var(--ink)!important}
 .mundial-group .today-btn:hover{background:rgba(201,162,39,.18)!important;border-color:var(--wc-gold)!important}
 #btnMundial.active{background:var(--wc-gold)!important;border-color:var(--wc-gold-dk)!important;color:var(--wc-black)!important;font-weight:700!important}
 #btnSoloMundial.active{background:var(--wc-blue)!important;border-color:var(--wc-blue)!important;color:#fff!important}
@@ -177,9 +178,11 @@ select:disabled{opacity:.5;cursor:not-allowed}
       <button id="btnClear" class="today-btn" title="Restablece todos los filtros">&#10005; Limpiar filtros</button>
       <div class="mundial-group">
         <span class="mundial-group-lbl">Mundial 2026</span>
-        <button id="btnMundial" class="today-btn" title="Mostrar/ocultar partidos del Mundial FIFA 2026">⚽ Mostrar Partidos</button>
-        <button id="btnSoloMundial" class="today-btn" title="Ver únicamente los partidos del Mundial">🎯 Solo Partidos</button>
-        <button id="btnNoPuedes" class="today-btn" title="Partidos que chocan con tus clases o exámenes">🤡 No podrás ver</button>
+        <div class="mundial-group-btns">
+          <button id="btnMundial" class="today-btn" title="Mostrar/ocultar partidos del Mundial FIFA 2026">⚽ Mostrar Partidos</button>
+          <button id="btnSoloMundial" class="today-btn" title="Ver únicamente los partidos del Mundial">🎯 Solo Partidos</button>
+          <button id="btnNoPuedes" class="today-btn" title="Partidos que chocan con tus clases o exámenes">🤡 No podrás ver</button>
+        </div>
       </div>
     </div>
     <div class="seg view-toggle">
@@ -234,7 +237,7 @@ const CSV_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vQq3sXfPTvpFc29om
 // ===== Mundial 2026 — openfootball (gratis, sin API key, actualiza resultados) =====
 // Fuente: https://github.com/openfootball/worldcup.json  — sin límites, sin auth
 const MUNDIAL_URL = "https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json";
-const MUNDIAL_CACHE_KEY = "mbao2028_mundial_v3";
+const MUNDIAL_CACHE_KEY = "mbao2028_mundial_v4";
 const MUNDIAL_CACHE_TTL = 2 * 60 * 60 * 1000; // 2 horas
 let MUNDIAL_EVENTS = [];
 
@@ -537,7 +540,7 @@ function rebuildAllMultis(){MULTI.forEach(c=>buildMulti(c.id));}
 // Calcula las opciones de cada filtro a partir de los datos cargados
 function initFilters(){
   const usedSubj=new Set(EVENTS.filter(e=>e.subj!=="mundial").map(e=>e.subj));
-  if(state.mundial||state.soloMundial)MUNDIAL_EVENTS.forEach(e=>usedSubj.add(e.subj));
+  if(state.mundial||state.soloMundial||state.nopuedes)MUNDIAL_EVENTS.forEach(e=>usedSubj.add(e.subj));
   OPTS.msMateria=Object.entries(SUBJ).filter(([k])=>usedSubj.has(k)).map(([k,v])=>({value:k,label:v.name}));
   OPTS.msProf=[...new Set(EVENTS.map(e=>e.prof))].filter(p=>p&&p!=="\u2014").sort((a,b)=>a.localeCompare(b,'es')).map(p=>({value:p,label:p}));
   OPTS.msMes=[...new Set(EVENTS.map(e=>e.y+"-"+pad(e.m+1)))].sort().map(k=>{const [y,m]=k.split("-");return {value:k,label:MONTHS[Number(m)-1]+' '+y};});
@@ -579,7 +582,7 @@ function passFilters(e, dt){
   return true;
 }
 function eventsByDay(dateKey){
-  const _base=EVENTS.filter(e=>e.subj!="mundial");const _src=(state.mundial||state.soloMundial)?[..._base,...MUNDIAL_EVENTS]:_base;
+  const _base=EVENTS.filter(e=>e.subj!="mundial");const _src=(state.mundial||state.soloMundial||state.nopuedes)?[..._base,...MUNDIAL_EVENTS]:_base;
   return _src.filter(e=>e.dateKey===dateKey).map(e=>({...e,dispMin:shiftMin(e.min,state.tz),dispEnd:(e.end!=null?shiftMin(e.end,state.tz):null)})).sort((a,b)=>a.dispMin-b.dispMin);
 }
 const calArea=document.getElementById("calArea");
@@ -590,24 +593,30 @@ function evHTML(e){
   const c=SUBJ[e.subj].color;
   if(e.subj==="mundial"){
     const clash=hasClash(e);
-    // Color según estado WC2026: rojo=clash/alerta, verde=finalizado, oro=en vivo, azul=próximo
-    let cc;
-    if(clash)       cc="var(--wc-red)";
-    else if(e.live) cc="var(--wc-gold)";
-    else if(e.finished) cc="var(--wc-green)";
-    else            cc="var(--wc-blue)";
+    // Strip banderas del label (por si quedan en caché viejo)
+    const rawLbl=e.label.replace(/[\u{1F1E0}-\u{1F1FF}]/gu,"").replace(/\s{2,}/g," ").trim();
+    // Color por país anfitrión: México=verde, Canadá=rojo, EE.UU.=azul
+    function wcCC(){
+      if(clash) return "var(--wc-red)";
+      if(e.live) return "var(--wc-gold)";
+      const l=(e.loc||"").toLowerCase();
+      if(/guadalajara|monterrey|mexico.?city|ciudad.de/i.test(l)) return "var(--wc-green)";
+      if(/toronto|vancouver/i.test(l)) return "var(--wc-red)";
+      return "var(--wc-blue)";
+    }
+    const cc=wcCC();
     // Score display
     let scoreLine="";
     if(e.finished&&e.homeGoals!=null) scoreLine="✅ "+e.homeGoals+" – "+e.awayGoals;
     else if(e.live&&e.homeGoals!=null) scoreLine="🔴 EN VIVO "+e.homeGoals+" – "+e.awayGoals;
-    const displayLabel=(clash?"🤡 ":"")+e.label;
+    const displayLabel=(clash?"🤡 ":"")+rawLbl;
     let meta=[];
     if(e.ses) meta.push(e.ses);
     if(e.loc) meta.push(e.loc);
     if(scoreLine) meta.push(scoreLine);
     if(clash) meta.push("💔 <b>Tienes clase/examen</b>");
     const cross=e.dispMin>=1440;
-    return '<div class="ev" style="--cc:'+cc+'" title="'+e.label.replace(/"/g,"&quot;")+'">'+
+    return '<div class="ev" style="--cc:'+cc+'" title="'+rawLbl.replace(/"/g,"&quot;")+'">'+
       '<span class="t">'+timeRange(e)+(cross?' <span class="xday">(día sig.)</span>':'')+'</span>'+
       '<span class="n">'+displayLabel+'</span>'+
       (meta.length?'<span class="meta">'+meta.join(" · ")+'</span>':'')+
@@ -714,7 +723,7 @@ function weekRowHTML(weekStart, restrictMonth){
 /* Date range spanning the whole dataset. */
 function datasetBounds(){
   let min=null,max=null;
-  const _base2=EVENTS.filter(e=>e.subj!="mundial");const _all=(state.mundial||state.soloMundial)?[..._base2,...MUNDIAL_EVENTS]:_base2;
+  const _base2=EVENTS.filter(e=>e.subj!="mundial");const _all=(state.mundial||state.soloMundial||state.nopuedes)?[..._base2,...MUNDIAL_EVENTS]:_base2;
   _all.forEach(e=>{const dt=new Date(e.y,e.m,e.d);if(!min||dt<min)min=dt;if(!max||dt>max)max=dt;});
   return [min,max];
 }
@@ -799,7 +808,7 @@ document.querySelectorAll(".ms-btn").forEach(b=>{b.onclick=ev=>{ev.stopPropagati
 document.addEventListener("click",ev=>{document.querySelectorAll(".ms.open").forEach(ms=>{if(!ms.contains(ev.target))ms.classList.remove("open");});});
 const _btn=document.getElementById("btnReload");if(_btn)_btn.onclick=async()=>{
   await loadData();
-  if(state.mundial||state.soloMundial){await loadMundial(true);initFilters();render();}
+  if(state.mundial||state.soloMundial||state.nopuedes){await loadMundial(true);initFilters();render();}
 };
 function toggleTasks(){state.task=!state.task;if(state.task)state.exam=false;syncFilterBtns();saveState();render();}
 function toggleExams(){state.exam=!state.exam;if(state.exam)state.task=false;syncFilterBtns();saveState();render();}
@@ -817,8 +826,8 @@ const _bc=document.getElementById("btnClear");if(_bc)_bc.onclick=clearFilters;
 const _bnp=document.getElementById("btnNoPuedes");if(_bnp)_bnp.onclick=toggleNoPuedes;
 async function toggleNoPuedes(){
   state.nopuedes=!state.nopuedes;
-  if(state.nopuedes&&!state.mundial){
-    state.mundial=true;
+  if(state.nopuedes){
+    state.mundial=false; state.soloMundial=false;
     if(MUNDIAL_EVENTS.length===0){
       const btn=document.getElementById("btnNoPuedes");
       if(btn){const p=btn.textContent;btn.textContent="⏳ Cargando...";await loadMundial();btn.textContent=p;}
@@ -830,7 +839,7 @@ async function toggleNoPuedes(){
 }
 async function toggleMundial(){
   state.mundial=!state.mundial;
-  if(state.mundial) state.soloMundial=false;
+  if(state.mundial){ state.soloMundial=false; state.nopuedes=false; }
   syncFilterBtns();
   if(state.mundial&&MUNDIAL_EVENTS.length===0){
     const btn=document.getElementById("btnMundial");
@@ -842,7 +851,7 @@ async function toggleMundial(){
 }
 async function toggleSoloMundial(){
   state.soloMundial=!state.soloMundial;
-  if(state.soloMundial) state.mundial=false;
+  if(state.soloMundial){ state.mundial=false; state.nopuedes=false; }
   if(state.soloMundial){
     if(MUNDIAL_EVENTS.length===0){
       const btn=document.getElementById("btnSoloMundial");

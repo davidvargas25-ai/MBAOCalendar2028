@@ -181,6 +181,10 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .npg-ev-lbl{font-size:.7rem;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2}
 .npg-ev-time{font-size:.6rem;color:rgba(255,255,255,.6);font-variant-numeric:tabular-nums;white-space:nowrap}
 .np-empty-msg{padding:60px 20px;text-align:center;color:var(--ink-soft);font-family:'Fraunces',serif;font-style:italic;font-size:1.05rem}
+.np-week{margin-top:22px}
+.np-week-hdr{font-size:.72rem;font-weight:800;letter-spacing:.1em;color:var(--ink);padding:4px 2px 8px;text-transform:uppercase}
+.np-week-body{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start}
+.np-view{flex:1;min-width:180px;background:#0b1829;border-radius:10px;overflow:hidden}
 </style>
 </head>
 <body>
@@ -798,7 +802,7 @@ function renderWeek(){
 }
 
 function renderNoPuedes(){
-  const SLOT=30, SLOT_H=26, PAD_SLOTS=1, tz=state.tz;
+  const SLOT=30, SH=30, PAD=1, tz=state.tz;
 
   // Agrupar MBA por día
   const mbaByDay={};
@@ -822,88 +826,126 @@ function renderNoPuedes(){
     day.clases=(mbaByDay[dk]||[]).filter(mba=>day.partidos.some(p=>mba.min<p.end&&mba.end>p.min));
   });
 
-  const days=[...dayMap.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
-  const nDays=days.length;
+  const pad2=n=>String(n).padStart(2,"0");
 
-  // Rango de tiempo global (en tz del usuario)
+  // Helper: dispMin/dispEnd para un evento
   const disp=(min,end)=>{
     let s=shiftMin(min,tz), en=shiftMin(end||min+60,tz);
     if(en<=s)en+=1440; return{s,en};
   };
-  let rMin=1440,rMax=0;
-  days.forEach(([,{partidos,clases}])=>{
-    [...partidos,...clases].forEach(e=>{
-      const{s,en}=disp(e.min,e.end);
-      rMin=Math.min(rMin,s); rMax=Math.max(rMax,en);
-    });
-  });
-  const slotStart=Math.floor(rMin/SLOT)*SLOT - PAD_SLOTS*SLOT;
-  const slotEnd  =Math.ceil(rMax/SLOT)*SLOT  + PAD_SLOTS*SLOT;
-  const nSlots=(slotEnd-slotStart)/SLOT;
 
-  // Helpers
-  const toRow=t=>Math.round((t-slotStart)/SLOT)+2; // row 1=header
+  // Rango de tiempo de un día
+  const dayRange=([,{partidos,clases}])=>{
+    let mn=1440,mx=0;
+    [...partidos,...clases].forEach(e=>{const{s,en}=disp(e.min,e.end);mn=Math.min(mn,s);mx=Math.max(mx,en);});
+    return{mn,mx};
+  };
 
-  // CSS grid: 52px(hora) + [1fr clase, 1fr partido] × nDays
-  const colTpl="52px "+Array.from({length:nDays},()=>"minmax(80px,1fr) minmax(80px,1fr)").join(" ");
-  const rowTpl="30px "+Array.from({length:nSlots},()=>SLOT_H+"px").join(" ");
-
-  let out='';
-
-  // Header: "Hora" + un span x2 por día
-  out+='<div class="npg-hora-hdr" style="grid-column:1;grid-row:1">Hora</div>';
-  days.forEach(([dk],i)=>{
-    const[y,mo,d]=dk.split("-").map(Number);
+  // ── Agrupar días por semana (lunes-domingo) ──────────────────────────────
+  const weekMap=new Map();
+  [...dayMap.entries()].sort((a,b)=>a[0].localeCompare(b[0])).forEach(entry=>{
+    const[y,mo,d]=entry[0].split("-").map(Number);
     const dt=new Date(y,mo-1,d);
-    const lbl=DOWL[dt.getDay()]+' '+d+' '+MONTHS[mo-1].slice(0,3).toLowerCase();
-    const col=2+i*2;
-    out+='<div class="npg-day-hdr" style="grid-column:'+col+'/'+(col+2)+';grid-row:1">'+lbl+'</div>';
+    const dow=dt.getDay();
+    const mon=new Date(dt); mon.setDate(d+(dow===0?-6:1-dow));
+    const sun=new Date(mon); sun.setDate(mon.getDate()+6);
+    const wk=mon.getFullYear()+pad2(mon.getMonth()+1)+pad2(mon.getDate());
+    if(!weekMap.has(wk))weekMap.set(wk,{mon,sun,days:[]});
+    weekMap.get(wk).days.push(entry);
   });
 
-  // Fondo + eje de tiempo
-  for(let s=0;s<nSlots;s++){
-    const t=slotStart+s*SLOT;
-    const row=s+2;
-    const hr=t%60===0;
-    out+='<div class="npg-time'+(hr?' hr':'')+'" style="grid-column:1;grid-row:'+row+'">'+(hr?fmtTime(t):'')+'</div>';
-    for(let i=0;i<nDays;i++){
-      const claseCol=2+i*2, partidoCol=3+i*2;
-      const daySep=i===0?'':' day-sep';
-      out+='<div class="npg-bg'+(hr?' hr':'')+daySep+'" style="grid-column:'+claseCol+';grid-row:'+row+'"></div>';
-      out+='<div class="npg-bg'+(hr?' hr':'')+' partido-col" style="grid-column:'+partidoCol+';grid-row:'+row+'"></div>';
-    }
-  }
+  // ── Dentro de cada semana: agrupar días por solapamiento de rango horario ─
+  const groupByTime=days=>{
+    const groups=[];
+    days.forEach(entry=>{
+      const{mn,mx}=dayRange(entry);
+      let found=false;
+      for(const g of groups){
+        if(mn<g.mx&&mx>g.mn){g.days.push(entry);g.mn=Math.min(g.mn,mn);g.mx=Math.max(g.mx,mx);found=true;break;}
+      }
+      if(!found)groups.push({days:[entry],mn,mx});
+    });
+    return groups;
+  };
 
-  // Eventos
-  days.forEach(([dk,{partidos,clases}],i)=>{
-    const claseCol=2+i*2, partidoCol=3+i*2;
+  // ── Construir HTML ──────────────────────────────────────────────────────
+  const monthNames=typeof MONTHS!=="undefined"?MONTHS:["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+  const dowNames  =typeof DOWL!=="undefined"?DOWL:["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 
-    clases.forEach(e=>{
-      const{s,en}=disp(e.min,e.end);
-      const rs=toRow(s), re=Math.max(rs+1,toRow(en));
-      const cc=(SUBJ[e.subj]&&SUBJ[e.subj].color)||"var(--c-act)";
-      out+='<div class="npg-ev" style="grid-column:'+claseCol+';grid-row:'+rs+'/'+re+';--ev-color:'+cc+'">'+
-        '<span class="npg-ev-lbl">'+e.label+'</span>'+
-        '<span class="npg-ev-time">'+fmtTime(s)+'–'+fmtTime(en)+'</span></div>';
+  const fmtDay=dt=>dt.getDate()+" de "+monthNames[dt.getMonth()].toLowerCase();
+
+  let outerHtml="";
+
+  weekMap.forEach(({mon,sun,days})=>{
+    const wHdr="Semana del "+fmtDay(mon).toUpperCase()+" AL "+fmtDay(sun).toUpperCase()+" DE "+sun.getFullYear();
+    const groups=groupByTime(days);
+
+    let groupsHtml="";
+    groups.forEach(({days:gDays,mn,mx})=>{
+      const slotStart=Math.floor(mn/SLOT)*SLOT-PAD*SLOT;
+      const slotEnd  =Math.ceil(mx/SLOT)*SLOT+PAD*SLOT;
+      const nSlots=(slotEnd-slotStart)/SLOT;
+      const nDays=gDays.length;
+      const colTpl="52px "+Array.from({length:nDays},()=>"minmax(72px,1fr) minmax(72px,1fr)").join(" ");
+      const rowTpl="30px "+Array.from({length:nSlots},()=>SH+"px").join(" ");
+      const toRow=t=>Math.round((t-slotStart)/SLOT)+2;
+
+      let g="";
+      // Header hora
+      g+='<div class="npg-hora-hdr" style="grid-column:1;grid-row:1">Hora</div>';
+      // Headers días
+      gDays.forEach(([dk],i)=>{
+        const[y,mo,d]=dk.split("-").map(Number);
+        const dt=new Date(y,mo-1,d);
+        const lbl=dowNames[dt.getDay()]+" "+d+" "+monthNames[mo-1].slice(0,3).toLowerCase();
+        const col=2+i*2;
+        g+='<div class="npg-day-hdr" style="grid-column:'+col+'/'+(col+2)+';grid-row:1">'+lbl+'</div>';
+      });
+      // Fondo + eje de tiempo
+      for(let s=0;s<nSlots;s++){
+        const t=slotStart+s*SLOT, row=s+2, hr=t%60===0;
+        g+='<div class="npg-time'+(hr?" hr":"")+'" style="grid-column:1;grid-row:'+row+'">'+(hr?fmtTime(t):"")+"</div>";
+        for(let i=0;i<nDays;i++){
+          const cc=2+i*2, pc=3+i*2;
+          const sep=i>0?" day-sep":"";
+          g+='<div class="npg-bg'+(hr?" hr":"")+sep+'" style="grid-column:'+cc+';grid-row:'+row+'"></div>';
+          g+='<div class="npg-bg'+(hr?" hr":" partido-col")+'" style="grid-column:'+pc+';grid-row:'+row+'"></div>';
+        }
+      }
+      // Eventos
+      gDays.forEach(([dk,{partidos,clases}],i)=>{
+        const claseCol=2+i*2, partidoCol=3+i*2;
+        clases.forEach(e=>{
+          const{s,en}=disp(e.min,e.end);
+          const rs=toRow(s),re=Math.max(rs+1,toRow(en));
+          const cc=(SUBJ[e.subj]&&SUBJ[e.subj].color)||"var(--c-act)";
+          g+='<div class="npg-ev" style="grid-column:'+claseCol+';grid-row:'+rs+'/'+re+';--ev-color:'+cc+'">'+
+            '<span class="npg-ev-lbl">'+e.label+'</span>'+
+            '<span class="npg-ev-time">'+fmtTime(s)+'–'+fmtTime(en)+'</span></div>';
+        });
+        partidos.forEach(p=>{
+          const{s,en}=disp(p.min,p.end);
+          const rs=toRow(s),re=Math.max(rs+1,toRow(en));
+          const l=(p.loc||"").toLowerCase();
+          const cc=/guadalajara|monterrey|mexico.?city|ciudad.de/i.test(l)?"var(--wc-green)":
+                   /toronto|vancouver/i.test(l)?"var(--wc-red)":"var(--wc-blue)";
+          const lbl=p.label.replace(/[🇠-🇿]/gu,"").trim();
+          const sc=p.finished&&p.homeGoals!=null?" "+p.homeGoals+"–"+p.awayGoals:"";
+          g+='<div class="npg-ev" style="grid-column:'+partidoCol+';grid-row:'+rs+'/'+re+';--ev-color:'+cc+'">'+
+            '<span class="npg-ev-lbl">⚽ '+lbl+sc+'</span>'+
+            '<span class="npg-ev-time">'+fmtTime(s)+'–'+fmtTime(en)+'</span></div>';
+        });
+      });
+
+      groupsHtml+='<div class="np-view"><div class="npg" style="grid-template-columns:'+colTpl+';grid-template-rows:'+rowTpl+'">'+g+'</div></div>';
     });
 
-    partidos.forEach(p=>{
-      const{s,en}=disp(p.min,p.end);
-      const rs=toRow(s), re=Math.max(rs+1,toRow(en));
-      const l=(p.loc||"").toLowerCase();
-      const cc=/guadalajara|monterrey|mexico.?city|ciudad.de/i.test(l)?"var(--wc-green)":
-               /toronto|vancouver/i.test(l)?"var(--wc-red)":"var(--wc-blue)";
-      const lbl=p.label.replace(/[\u{1F1E0}-\u{1F1FF}]/gu,"").trim();
-      const sc=p.finished&&p.homeGoals!=null?" "+p.homeGoals+"–"+p.awayGoals:"";
-      out+='<div class="npg-ev" style="grid-column:'+partidoCol+';grid-row:'+rs+'/'+re+';--ev-color:'+cc+'">'+
-        '<span class="npg-ev-lbl">⚽ '+lbl+sc+'</span>'+
-        '<span class="npg-ev-time">'+fmtTime(s)+'–'+fmtTime(en)+'</span></div>';
-    });
+    outerHtml+='<div class="np-week"><div class="np-week-hdr">'+wHdr+'</div><div class="np-week-body">'+groupsHtml+'</div></div>';
   });
 
-  calArea.innerHTML='<div class="np-view"><div class="npg" style="grid-template-columns:'+colTpl+';grid-template-rows:'+rowTpl+'">'+out+'</div></div>';
-  const _pt=document.getElementById('periodTitle');
-  if(_pt)_pt.innerHTML='<b>'+nDays+'</b> '+(nDays===1?'día':'días')+' con clash &middot; <b>'+days.reduce((s,[,d])=>s+d.partidos.length,0)+'</b> partidos';
+  calArea.innerHTML=outerHtml;
+  const _pt=document.getElementById("periodTitle");
+  if(_pt)_pt.innerHTML="<b>"+dayMap.size+"</b> "+(dayMap.size===1?"día":"días")+" con partidos que no podrás ver";
 }
 
 
